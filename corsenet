@@ -82,25 +82,28 @@ def get_tra_ori():
     theta = Lambda(orientation)(img_input)
     model = Model(img_input, theta)
     return model
+
 import numpy as np
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
+import tensorflow as tf
 from scipy import ndimage
 import glob
 import os
 
-# Define a placeholder function for `orientation` if not already defined
+# Define a placeholder function for `orientation`
 def orientation(x):
-    # Implement your orientation function logic here
-    # Placeholder logic: Returns the mean of input as orientation
-    return np.mean(x, axis=(1, 2, 3), keepdims=True)
+    # Placeholder orientation logic: Returns mean of input along specified axes
+    return tf.reduce_mean(x, axis=[1, 2, 3], keepdims=True)
 
 # Function to create a model for orientation
 def get_tra_ori():
     # Input shape: (None, None, 1) allows dynamic spatial dimensions
-    img_input = Input(shape=(None, None, 1))
+    img_input = Input(shape=(None, None, 1))  # Dynamic spatial dimensions, grayscale (1 channel)
+    
     # Use Lambda layer for orientation computation
-    theta = Lambda(orientation)(img_input)
+    theta = Lambda(lambda x: orientation(x))(img_input)
+    
     # Create the model
     model = Model(inputs=img_input, outputs=theta)
     return model
@@ -110,7 +113,7 @@ tra_ori_model = get_tra_ori()
 
 # Function to retrieve image names, folder names, and the maximum image size
 def get_maximum_img_size_and_names(dataset, sample_rate=None):
-    if isinstance(dataset, str):  # `basestring` is not valid in Python 3+
+    if isinstance(dataset, str):  # Check for single string
         dataset = [dataset]
     
     if sample_rate is None:
@@ -145,6 +148,7 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
     img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
     
     return img_name, folder_name, img_size
+
 
 
 
