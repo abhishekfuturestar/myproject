@@ -1,0 +1,84 @@
+from functools import partial
+from multiprocessing import Pool
+from MinutiaeNet_utils import *
+from scipy import ndimage, signal, sparse
+import numpy as np
+import imageio
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Lambda
+
+
+# Define the updated sub_load_data function
+def sub_load_data(data, img_size, aug):
+    img_name, dataset = data
+    img = imageio.imread(dataset + 'img_files/' + img_name + '.bmp', pilmode='L')
+
+    try:
+        seg = imageio.imread(dataset + 'seg_files/' + img_name + '.bmp', pilmode='L')
+    except FileNotFoundError:
+        seg = np.ones_like(img)
+
+    try:
+        ali = imageio.imread(dataset + 'ori_files/' + img_name + '.jpg', pilmode='L')
+    except FileNotFoundError:
+        ali = np.zeros_like(img)
+
+    mnt = np.array(mnt_reader(dataset + 'mnt_files/' + img_name + '.mnt'), dtype=float)
+
+    if any(img.shape != img_size):
+        if np.random.rand() < aug:
+            tra = np.int32(np.random.rand(2) * (np.array(img_size) - np.array(img.shape)))
+        else:
+            tra = np.int32(0.5 * (np.array(img_size) - np.array(img.shape)))
+
+        img_t = np.ones(img_size) * np.mean(img)
+        seg_t = np.zeros(img_size)
+        ali_t = np.ones(img_size) * np.mean(ali)
+
+        img_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = img
+        seg_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = seg
+        ali_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = ali
+
+        img = img_t
+        seg = seg_t
+        ali = ali_t
+        mnt = mnt + np.array([tra[1], tra[0], 0])
+
+    if np.random.rand() < aug:
+        rot = np.random.rand() * 360
+        tra = (np.random.rand(2) - 0.5) / 2 * img_size
+        img = ndimage.rotate(img, rot, reshape=False, mode='reflect')
+        img = ndimage.shift(img, tra, mode='reflect')
+        seg = ndimage.rotate(seg, rot, reshape=False, mode='constant')
+        seg = ndimage.shift(seg, tra, mode='constant')
+        ali = ndimage.rotate(ali, rot, reshape=False, mode='reflect')
+        ali = ndimage.shift(ali, tra, mode='reflect')
+        mnt_r = point_rot(mnt[:, :2], rot / 180 * np.pi, img.shape, img.shape)
+        mnt = np.column_stack((mnt_r + tra[[1, 0]], mnt[:, 2] - rot / 180 * np.pi))
+
+    mnt = mnt[(8 <= mnt[:, 0]) * (mnt[:, 0] < img_size[1] - 8) * (8 <= mnt[:, 1]) * (mnt[:, 1] < img_size[0] - 8), :]
+    return img, seg, ali, mnt
+
+
+# Fix placeholder and Lambda operations
+def orientation(image, stride=8, window=17):
+    assert image.shape[-1] == 1, "Images must be grayscale"
+    sobelx = tf.constant([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=tf.float32)
+    sobely = tf.constant([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=tf.float32)
+    Ix = tf.nn.conv2d(image, sobelx[None, :, :, None], strides=[1, 1, 1, 1], padding='SAME')
+    Iy = tf.nn.conv2d(image, sobely[None, :, :, None], strides=[1, 1, 1, 1], padding='SAME')
+    Gxx = tf.nn.conv2d(Ix**2, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
+    Gyy = tf.nn.conv2d(Iy**2, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
+    Gxy = tf.nn.conv2d(Ix * Iy, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
+    theta = 0.5 * tf.atan2(2 * Gxy, Gxx - Gyy)
+    return theta
+
+
+# Update get_tra_ori() usage and tra_ori_model
+def get_tra_ori():
+    img_input = Input(shape=(None, None, 1))
+    theta = Lambda(orientation)(img_input)
+    model = Model(img_input, theta)
+    return model
