@@ -82,12 +82,9 @@ def get_tra_ori():
     theta = Lambda(orientation)(img_input)
     model = Model(img_input, theta)
     return model
-
-
 import numpy as np
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
-from tensorflow.keras.backend import ceil
 from scipy import ndimage
 import glob
 import os
@@ -127,7 +124,7 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
         
         if not img_files:
             raise ValueError(f"No images found in folder: {os.path.join(folder, 'img_files')}")
-        
+
         # Extract image names
         img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
         
@@ -148,3 +145,6 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
     img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
     
     return img_name, folder_name, img_size
+
+
+
