@@ -82,3 +82,69 @@ def get_tra_ori():
     theta = Lambda(orientation)(img_input)
     model = Model(img_input, theta)
     return model
+
+
+import numpy as np
+from tensorflow.keras.layers import Input, Lambda
+from tensorflow.keras.models import Model
+from tensorflow.keras.backend import ceil
+from scipy import ndimage
+import glob
+import os
+
+# Define a placeholder function for `orientation` if not already defined
+def orientation(x):
+    # Implement your orientation function logic here
+    # Placeholder logic: Returns the mean of input as orientation
+    return np.mean(x, axis=(1, 2, 3), keepdims=True)
+
+# Function to create a model for orientation
+def get_tra_ori():
+    # Input shape: (None, None, 1) allows dynamic spatial dimensions
+    img_input = Input(shape=(None, None, 1))
+    # Use Lambda layer for orientation computation
+    theta = Lambda(orientation)(img_input)
+    # Create the model
+    model = Model(inputs=img_input, outputs=theta)
+    return model
+
+# Instantiate the model
+tra_ori_model = get_tra_ori()
+
+# Function to retrieve image names, folder names, and the maximum image size
+def get_maximum_img_size_and_names(dataset, sample_rate=None):
+    if isinstance(dataset, str):  # `basestring` is not valid in Python 3+
+        dataset = [dataset]
+    
+    if sample_rate is None:
+        sample_rate = [1] * len(dataset)
+
+    img_name, folder_name, img_size = [], [], []
+
+    for folder, rate in zip(dataset, sample_rate):
+        # Retrieve all image file paths
+        img_files = glob.glob(os.path.join(folder, 'img_files', '*.bmp'))
+        
+        if not img_files:
+            raise ValueError(f"No images found in folder: {os.path.join(folder, 'img_files')}")
+        
+        # Extract image names
+        img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
+        
+        # Expand image names and folder names based on the sampling rate
+        img_name.extend(img_name_t * rate)
+        folder_name.extend([folder] * len(img_name_t) * rate)
+        
+        # Read the first image to determine its size
+        first_image = ndimage.imread(img_files[0], mode='L')  # Use scipy.ndimage for compatibility
+        img_size.append(np.array(first_image.shape))
+
+    # Convert to NumPy arrays for processing
+    img_name = np.asarray(img_name)
+    folder_name = np.asarray(folder_name)
+    img_size = np.max(np.asarray(img_size), axis=0)
+
+    # Ensure image size is divisible by 8
+    img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
+    
+    return img_name, folder_name, img_size
