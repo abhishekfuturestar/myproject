@@ -87,22 +87,25 @@ import numpy as np
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 import tensorflow as tf
-from scipy import ndimage
+import imageio
 import glob
 import os
 
-# Define a placeholder function for `orientation`
+# Define the `orientation` function
 def orientation(x):
-    # Placeholder orientation logic: Returns mean of input along specified axes
+    # Placeholder orientation logic: Computes the mean along specified axes
     return tf.reduce_mean(x, axis=[1, 2, 3], keepdims=True)
 
 # Function to create a model for orientation
 def get_tra_ori():
     # Input shape: (None, None, 1) allows dynamic spatial dimensions
-    img_input = Input(shape=(None, None, 1))  # Dynamic spatial dimensions, grayscale (1 channel)
+    img_input = Input(shape=(None, None, 1))  # Grayscale images with dynamic spatial dimensions
     
-    # Use Lambda layer for orientation computation
-    theta = Lambda(lambda x: orientation(x))(img_input)
+    # Use Lambda layer for orientation computation and specify output_shape
+    theta = Lambda(
+        lambda x: orientation(x),
+        output_shape=(1, 1, 1)  # Output shape is explicitly set
+    )(img_input)
     
     # Create the model
     model = Model(inputs=img_input, outputs=theta)
@@ -136,7 +139,7 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
         folder_name.extend([folder] * len(img_name_t) * rate)
         
         # Read the first image to determine its size
-        first_image = ndimage.imread(img_files[0], mode='L')  # Use scipy.ndimage for compatibility
+        first_image = imageio.imread(img_files[0], as_gray=True)
         img_size.append(np.array(first_image.shape))
 
     # Convert to NumPy arrays for processing
@@ -148,7 +151,5 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
     img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
     
     return img_name, folder_name, img_size
-
-
 
 
