@@ -1,122 +1,20 @@
-"""Code for FineNet in paper "Robust Minutiae Extractor: Integrating Deep Networks and Fingerprint Domain Knowledge" at ICB 2018
-  https://arxiv.org/pdf/1712.09401.pdf
-
-  If you use whole or partial function in this code, please cite paper:
-
-  @inproceedings{Nguyen_MinutiaeNet,
-    author    = {Dinh-Luan Nguyen and Kai Cao and Anil K. Jain},
-    title     = {Robust Minutiae Extractor: Integrating Deep Networks and Fingerprint Domain Knowledge},
-    booktitle = {The 11th International Conference on Biometrics, 2018},
-    year      = {2018},
-    }
-"""
-
-from functools import partial
-from multiprocessing import Pool
-from MinutiaeNet_utils import *
-from scipy import ndimage, signal, sparse
 import numpy as np
-import imageio
+from tensorflow.keras.layers import Input, Lambda
+from tensorflow.keras.models import Model
 import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Lambda
 
-
-# Define the updated sub_load_data function
-def sub_load_data(data, img_size, aug):
-    img_name, dataset = data
-    img = imageio.imread(dataset + 'img_files/' + img_name + '.bmp', pilmode='L')
-
-    try:
-        seg = imageio.imread(dataset + 'seg_files/' + img_name + '.bmp', pilmode='L')
-    except FileNotFoundError:
-        seg = np.ones_like(img)
-
-    try:
-        ali = imageio.imread(dataset + 'ori_files/' + img_name + '.jpg', pilmode='L')
-    except FileNotFoundError:
-        ali = np.zeros_like(img)
-
-    mnt = np.array(mnt_reader(dataset + 'mnt_files/' + img_name + '.mnt'), dtype=float)
-
-    if any(img.shape != img_size):
-        if np.random.rand() < aug:
-            tra = np.int32(np.random.rand(2) * (np.array(img_size) - np.array(img.shape)))
-        else:
-            tra = np.int32(0.5 * (np.array(img_size) - np.array(img.shape)))
-
-        img_t = np.ones(img_size) * np.mean(img)
-        seg_t = np.zeros(img_size)
-        ali_t = np.ones(img_size) * np.mean(ali)
-
-        img_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = img
-        seg_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = seg
-        ali_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = ali
-
-        img = img_t
-        seg = seg_t
-        ali = ali_t
-        mnt = mnt + np.array([tra[1], tra[0], 0])
-
-    if np.random.rand() < aug:
-        rot = np.random.rand() * 360
-        tra = (np.random.rand(2) - 0.5) / 2 * img_size
-        img = ndimage.rotate(img, rot, reshape=False, mode='reflect')
-        img = ndimage.shift(img, tra, mode='reflect')
-        seg = ndimage.rotate(seg, rot, reshape=False, mode='constant')
-        seg = ndimage.shift(seg, tra, mode='constant')
-        ali = ndimage.rotate(ali, rot, reshape=False, mode='reflect')
-        ali = ndimage.shift(ali, tra, mode='reflect')
-        mnt_r = point_rot(mnt[:, :2], rot / 180 * np.pi, img.shape, img.shape)
-        mnt = np.column_stack((mnt_r + tra[[1, 0]], mnt[:, 2] - rot / 180 * np.pi))
-
-    mnt = mnt[(8 <= mnt[:, 0]) * (mnt[:, 0] < img_size[1] - 8) * (8 <= mnt[:, 1]) * (mnt[:, 1] < img_size[0] - 8), :]
-    return img, seg, ali, mnt
-
-
-# Fix placeholder and Lambda operations
-def orientation(image, stride=8, window=17):
-    assert image.shape[-1] == 1, "Images must be grayscale"
-    sobelx = tf.constant([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=tf.float32)
-    sobely = tf.constant([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=tf.float32)
-    Ix = tf.nn.conv2d(image, sobelx[None, :, :, None], strides=[1, 1, 1, 1], padding='SAME')
-    Iy = tf.nn.conv2d(image, sobely[None, :, :, None], strides=[1, 1, 1, 1], padding='SAME')
-    Gxx = tf.nn.conv2d(Ix**2, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
-    Gyy = tf.nn.conv2d(Iy**2, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
-    Gxy = tf.nn.conv2d(Ix * Iy, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
-    theta = 0.5 * tf.atan2(2 * Gxy, Gxx - Gyy)
-    return theta
-
-
-# Update get_tra_ori() usage and tra_ori_model
-def get_tra_ori():
-    img_input = Input(shape=(None, None, 1))
-    theta = Lambda(orientation)(img_input)
-    model = Model(img_input, theta)
-    return model
-
-tra_ori_model = get_tra_ori()
-
-import numpy as np
-from tensorflow.keras.layers import Input, Lambda
-from tensorflow.keras.models import Model
-from scipy import ndimage
-import glob
-import os
-
-# Define a placeholder function for `orientation` if not already defined
+# Define a placeholder function for `orientation`
 def orientation(x):
-    # Implement your orientation function logic here
-    # Placeholder logic: Returns the mean of input as orientation
-    return np.mean(x, axis=(1, 2, 3), keepdims=True)
+    # Example orientation logic: return the mean of the input tensor
+    # Ensure the output has a shape compatible with the model's requirements
+    return tf.reduce_mean(x, axis=[1, 2, 3], keepdims=True)
 
 # Function to create a model for orientation
 def get_tra_ori():
     # Input shape: (None, None, 1) allows dynamic spatial dimensions
     img_input = Input(shape=(None, None, 1))
     # Use Lambda layer for orientation computation
-    theta = Lambda(orientation)(img_input)
+    theta = Lambda(orientation, output_shape=(1,))(img_input)
     # Create the model
     model = Model(inputs=img_input, outputs=theta)
     return model
@@ -124,115 +22,5 @@ def get_tra_ori():
 # Instantiate the model
 tra_ori_model = get_tra_ori()
 
-import numpy as np
-from tensorflow.keras.layers import Input, Lambda
-from tensorflow.keras.models import Model
-import tensorflow as tf
-from scipy import ndimage
-import glob
-import os
-
-
-# Function to retrieve image names, folder names, and the maximum image size
-
-# Function to retrieve image names, folder names, and the maximum image size
-def get_maximum_img_size_and_names(dataset, sample_rate=None):
-    if isinstance(dataset, str):  # Check for single string
-        dataset = [dataset]
-    
-    if sample_rate is None:
-        sample_rate = [1] * len(dataset)
-
-    img_name, folder_name, img_size = [], [], []
-
-    for folder, rate in zip(dataset, sample_rate):
-        # Retrieve all image file paths
-        img_files = glob.glob(os.path.join(folder, 'img_files', '*.bmp'))
-        
-        if not img_files:
-            raise ValueError(f"No images found in folder: {os.path.join(folder, 'img_files')}")
-
-        # Extract image names
-        img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
-        
-        # Expand image names and folder names based on the sampling rate
-        img_name.extend(img_name_t * rate)
-        folder_name.extend([folder] * len(img_name_t) * rate)
-        
-        # Read the first image to determine its size
-        first_image = ndimage.imread(img_files[0], mode='L')  # Use scipy.ndimage for compatibility
-        img_size.append(np.array(first_image.shape))
-
-    # Convert to NumPy arrays for processing
-    img_name = np.asarray(img_name)
-    folder_name = np.asarray(folder_name)
-    img_size = np.max(np.asarray(img_size), axis=0)
-
-    # Ensure image size is divisible by 8
-    img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
-    
-    return img_name, folder_name, img_size
-
-
-
-
-
-
-
-
-
-
-
-
-
-The name tf.placeholder is deprecated. Please use tf.compat.v1.placeholder instead.
-
----------------------------------------------------------------------------
-NotImplementedError                       Traceback (most recent call last)
-Cell In[1], line 16
-     13 from keras import backend as K
-     15 from MinutiaeNet_utils import *
----> 16 from CoarseNet_utils import *
-     17 from CoarseNet_model import *
-     18 import argparse
-
-File ~\Downloads\MinutiaeNet-master\MinutiaeNet-master\CoarseNet\CoarseNet_utils.py:99
-     96     model = Model(img_input, theta)
-     97     return model
----> 99 tra_ori_model = get_tra_ori()
-    101 import numpy as np
-    102 from tensorflow.keras.layers import Input, Lambda
-
-File ~\Downloads\MinutiaeNet-master\MinutiaeNet-master\CoarseNet\CoarseNet_utils.py:95, in get_tra_ori()
-     93 def get_tra_ori():
-     94     img_input = Input(shape=(None, None, 1))
----> 95     theta = Lambda(orientation)(img_input)
-     96     model = Model(img_input, theta)
-     97     return model
-
-File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\utils\traceback_utils.py:122, in filter_traceback.<locals>.error_handler(*args, **kwargs)
-    119     filtered_tb = _process_traceback_frames(e.__traceback__)
-    120     # To get the full stack trace, call:
-    121     # `keras.config.disable_traceback_filtering()`
---> 122     raise e.with_traceback(filtered_tb) from None
-    123 finally:
-    124     del filtered_tb
-
-File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\core\lambda_layer.py:95, in Lambda.compute_output_shape(self, input_shape)
-     93         return tree.map_structure(lambda x: x.shape, output_spec)
-     94     except:
----> 95         raise NotImplementedError(
-     96             "We could not automatically infer the shape of "
-     97             "the Lambda's output. Please specify the `output_shape` "
-     98             "argument for this Lambda layer."
-     99         )
-    101 if callable(self._output_shape):
-    102     return self._output_shape(input_shape)
-
-NotImplementedError: Exception encountered when calling Lambda.call().
-
-We could not automatically infer the shape of the Lambda's output. Please specify the `output_shape` argument for this Lambda layer.
-
-Arguments received by Lambda.call():
-  • args=('<KerasTensor shape=(None, None, None, 1), dtype=float32, sparse=False, name=keras_tensor>',)
-  • kwargs={'mask': 'None'}
+# Print the model summary to verify the architecture
+tra_ori_model.summary()
