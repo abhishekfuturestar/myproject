@@ -2,25 +2,84 @@ import numpy as np
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 import tensorflow as tf
+from scipy import ndimage
+import glob
+import os
+import imageio
 
-# Define a placeholder function for `orientation`
-def orientation(x):
-    # Example orientation logic: return the mean of the input tensor
-    # Ensure the output has a shape compatible with the model's requirements
-    return tf.reduce_mean(x, axis=[1, 2, 3], keepdims=True)
+
+# Define the orientation function
+def orientation(x, stride=8, window=17):
+    """Compute orientation of the image using Sobel filters."""
+    assert x.shape[-1] == 1, "Input images must be grayscale"
+    sobelx = tf.constant([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=tf.float32)
+    sobely = tf.constant([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=tf.float32)
+    
+    sobelx = tf.reshape(sobelx, [3, 3, 1, 1])
+    sobely = tf.reshape(sobely, [3, 3, 1, 1])
+
+    Ix = tf.nn.conv2d(x, sobelx, strides=[1, 1, 1, 1], padding='SAME')
+    Iy = tf.nn.conv2d(x, sobely, strides=[1, 1, 1, 1], padding='SAME')
+
+    Gxx = tf.nn.conv2d(Ix**2, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
+    Gyy = tf.nn.conv2d(Iy**2, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
+    Gxy = tf.nn.conv2d(Ix * Iy, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
+    
+    theta = 0.5 * tf.atan2(2 * Gxy, Gxx - Gyy)
+    return theta
+
 
 # Function to create a model for orientation
 def get_tra_ori():
-    # Input shape: (None, None, 1) allows dynamic spatial dimensions
-    img_input = Input(shape=(None, None, 1))
-    # Use Lambda layer for orientation computation
-    theta = Lambda(orientation, output_shape=(1,))(img_input)
-    # Create the model
-    model = Model(inputs=img_input, outputs=theta)
+    """Create a model that computes orientation using the Lambda layer."""
+    img_input = Input(shape=(None, None, 1), name="input_image")
+    theta = Lambda(lambda x: orientation(x), output_shape=(None, None, 1), name="orientation")(img_input)
+    model = Model(inputs=img_input, outputs=theta, name="OrientationModel")
     return model
+
+
+# Function to retrieve image names, folder names, and the maximum image size
+def get_maximum_img_size_and_names(dataset, sample_rate=None):
+    """Retrieve image details and calculate the maximum image size."""
+    if isinstance(dataset, str):  # Ensure dataset is a list
+        dataset = [dataset]
+
+    if sample_rate is None:
+        sample_rate = [1] * len(dataset)
+
+    img_name, folder_name, img_size = [], [], []
+
+    for folder, rate in zip(dataset, sample_rate):
+        # Retrieve all image file paths
+        img_files = glob.glob(os.path.join(folder, 'img_files', '*.bmp'))
+
+        if not img_files:
+            raise ValueError(f"No images found in folder: {os.path.join(folder, 'img_files')}")
+
+        # Extract image names
+        img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
+
+        # Expand image names and folder names based on the sampling rate
+        img_name.extend(img_name_t * rate)
+        folder_name.extend([folder] * len(img_name_t) * rate)
+
+        # Read the first image to determine its size
+        first_image = imageio.imread(img_files[0])
+        img_size.append(np.array(first_image.shape))
+
+    # Convert to NumPy arrays for processing
+    img_name = np.asarray(img_name)
+    folder_name = np.asarray(folder_name)
+    img_size = np.max(np.asarray(img_size), axis=0)
+
+    # Ensure image size is divisible by 8
+    img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
+
+    return img_name, folder_name, img_size
+
 
 # Instantiate the model
 tra_ori_model = get_tra_ori()
 
-# Print the model summary to verify the architecture
+# Test the model summary
 tra_ori_model.summary()
