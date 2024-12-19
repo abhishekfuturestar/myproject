@@ -1,11 +1,10 @@
 import numpy as np
-from tensorflow.keras.layers import Input, Lambda
-from tensorflow.keras.models import Model
-import tensorflow as tf
-from scipy import ndimage
 import glob
 import os
 import imageio
+from tensorflow.keras.layers import Input, Lambda
+from tensorflow.keras.models import Model
+import tensorflow as tf
 
 
 # Define the orientation function
@@ -29,18 +28,33 @@ def orientation(x, stride=8, window=17):
     return theta
 
 
-# Function to create a model for orientation
+# Create the orientation model
 def get_tra_ori():
-    """Create a model that computes orientation using the Lambda layer."""
+    """Create a model to compute orientation using the Lambda layer."""
     img_input = Input(shape=(None, None, 1), name="input_image")
     theta = Lambda(lambda x: orientation(x), output_shape=(None, None, 1), name="orientation")(img_input)
     model = Model(inputs=img_input, outputs=theta, name="OrientationModel")
     return model
 
 
-# Function to retrieve image names, folder names, and the maximum image size
+# Instantiate the model
+tra_ori_model = get_tra_ori()
+
+
+# Function to get image names, folder names, and calculate maximum image size
 def get_maximum_img_size_and_names(dataset, sample_rate=None):
-    """Retrieve image details and calculate the maximum image size."""
+    """
+    Retrieve image details and calculate the maximum image size.
+
+    Args:
+        dataset: List of dataset directories.
+        sample_rate: Sampling rate for images from each dataset.
+
+    Returns:
+        img_name: List of image names.
+        folder_name: List of corresponding folder names.
+        img_size: Maximum image size, adjusted to be divisible by 8.
+    """
     if isinstance(dataset, str):  # Ensure dataset is a list
         dataset = [dataset]
 
@@ -77,9 +91,6 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
 
     return img_name, folder_name, img_size
 
-
-# Instantiate the model
-tra_ori_model = get_tra_ori()
 
 # Test the model summary
 tra_ori_model.summary()
