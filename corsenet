@@ -1,25 +1,7 @@
-ImportError                               Traceback (most recent call last)
-Cell In[13], line 17
-     15 from MinutiaeNet_utils import *
-     16 from CoarseNet_utils import *
----> 17 from CoarseNet_model import *
-     18 import argparse
-     20 tf.compat.v1.disable_eager_execution()
-
-File ~\Downloads\MinutiaeNet-master\MinutiaeNet-master\CoarseNet\CoarseNet_model.py:28
-     26 #sys.path.append(os.path.realpath('../FineNet'))
-     27 sys.path.append(os.path.realpath('C:/Users/2179048/Downloads/MinutiaeNet-master/MinutiaeNet-master/FineNet'))
----> 28 from FineNet_model import FineNetmodel
-     30 from keras.models import Model
-     31 from keras.layers import Input
-
-File ~\Downloads\MinutiaeNet-master\MinutiaeNet-master\FineNet\FineNet_model.py:8
-      4 from tensorflow.keras.models import Model
-      5 from tensorflow.keras.layers import (Activation, AveragePooling2D, BatchNormalization,
-      6                                      Concatenate, Conv2D, Dense, GlobalAveragePooling2D,
-      7                                      Input, Lambda, MaxPooling2D)
-----> 8 from tensorflow.keras.applications.imagenet_utils import preprocess_input, obtain_input_shape
-      9 from tensorflow.keras import backend as K
-     10 import matplotlib.pyplot as plt
-
-ImportError: cannot import name 'obtain_input_shape' from 'tensorflow.keras.applications.imagenet_utils' (C:\Users\2179048\AppData\Local\miniforge3\Lib\site-packages\keras\_tf_keras\keras\applications\imagenet_utils\__init__.py)
+# Replace this block in the FineNetmodel function:
+input_shape = imagenet_utils.get_input_shape_and_channels(
+    default_size=299,
+    min_size=139,
+    data_format=K.image_data_format(),
+    require_flatten=False
+)[0]
