@@ -1,20 +1,13 @@
-
-
-
-AttributeError: module 'tensorflow._api.v2.compat.v1' has no attribute 'GPUoptions'
-
-
-
+import tensorflow as tf
 from tensorflow.keras import backend as K
-from keras import backend as K
-
-from MinutiaeNet_utils import *
-from CoarseNet_utils import *
-from CoarseNet_model import *
 import argparse
 
+# Disable eager execution (if you need it for compatibility)
 tf.compat.v1.disable_eager_execution()
 
-config = tf.compat.v1.ConfigProto(gpu_option=tf.compat.v1.GPUoptions(allow_growth=True))
-sess = tf.compat.v1.Session(config=config)
-tf.compat.v1.Keras.backend.set_session(sess)
+# There is no need for GPU configuration since you don't have a GPU
+# Just set the session for Keras (this is usually not necessary in TensorFlow 2.x, but if needed)
+sess = tf.compat.v1.Session()
+tf.compat.v1.keras.backend.set_session(sess)
+
+# Rest of your code continues...
