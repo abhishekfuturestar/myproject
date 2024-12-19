@@ -1,1 +1,11 @@
-ttributeError: module 'keras._tf_keras.keras.backend' has no attribute 'set_session'
+import tensorflow as tf
+from tensorflow.keras import backend as K
+import argparse
+
+# Disable eager execution only if it's absolutely needed for compatibility
+tf.compat.v1.disable_eager_execution()
+
+# You no longer need to manually set the session in TensorFlow 2.x
+# Just run your model or other code directly without needing session management
+
+# Rest of your code continues...
