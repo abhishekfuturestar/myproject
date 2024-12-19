@@ -1,3 +1,10 @@
+
+
+
+AttributeError: module 'tensorflow._api.v2.compat.v1' has no attribute 'GPUoptions'
+
+
+
 from tensorflow.keras import backend as K
 from keras import backend as K
 
