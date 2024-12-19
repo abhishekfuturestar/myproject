@@ -1,1 +1,81 @@
-ImportError: cannot import name '_obtain_input_shape' from 'keras.applications.imagenet_utils' (C:\Users\2179048\AppData\Local\miniforge3\Lib\site-packages\keras\api\applications\imagenet_utils\__init__.py)
+from __future__ import absolute_import
+from __future__ import division
+
+import numpy as np
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import (
+    Activation,
+    AveragePooling2D,
+    BatchNormalization,
+    Concatenate,
+    Conv2D,
+    Dense,
+    GlobalAveragePooling2D,
+    Input,
+    Lambda,
+    MaxPooling2D,
+)
+from tensorflow.keras import backend as K
+from tensorflow.keras.losses import binary_crossentropy
+from CoarseNet_utils import *  # Ensure CoarseNet_utils is compatible with TensorFlow 2.x
+
+# Orientation Loss
+def orientation_loss(y_true, y_pred, lamb=1.):
+    y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
+    label_seg = K.sum(y_true, axis=-1, keepdims=True)
+    label_seg = K.cast(K.greater(label_seg, 0), K.floatx())
+    
+    lamb_pos, lamb_neg = 1., 1.
+    logloss = lamb_pos * y_true * K.log(y_pred) + lamb_neg * (1 - y_true) * K.log(1 - y_pred)
+    logloss = logloss * label_seg
+    logloss = -K.sum(logloss) / (K.sum(label_seg) + K.epsilon())
+    
+    mean_kernel = np.reshape(np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]], dtype=np.float32) / 8, [3, 3, 1, 1])
+    sin2angle_ori, cos2angle_ori, modulus_ori = ori2angle(y_pred)
+    sin2angle = K.conv2d(sin2angle_ori, mean_kernel, padding='same')
+    cos2angle = K.conv2d(cos2angle_ori, mean_kernel, padding='same')
+    modulus = K.conv2d(modulus_ori, mean_kernel, padding='same')
+    
+    coherence = K.sqrt(K.square(sin2angle) + K.square(cos2angle)) / (modulus + K.epsilon())
+    coherenceloss = K.sum(label_seg) / (K.sum(coherence * label_seg) + K.epsilon()) - 1
+    
+    return logloss + lamb * coherenceloss
+
+# Orientation Output Loss
+def orientation_output_loss(y_true, y_pred):
+    y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
+    label_seg = K.sum(y_true, axis=-1, keepdims=True)
+    label_seg = K.cast(K.greater(label_seg, 0), K.floatx())
+    
+    lamb_pos, lamb_neg = 1., 1.
+    logloss = lamb_pos * y_true * K.log(y_pred) + lamb_neg * (1 - y_true) * K.log(1 - y_pred)
+    logloss = logloss * label_seg
+    return -K.sum(logloss) / (K.sum(label_seg) + K.epsilon())
+
+# Segmentation Loss
+def segmentation_loss(y_true, y_pred, lamb=1.):
+    y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
+    total_elements = K.sum(K.ones_like(y_true))
+    label_pos = K.cast(K.greater(y_true, 0.0), K.floatx())
+    
+    lamb_pos = 0.5 * total_elements / K.sum(label_pos)
+    lamb_neg = 1 / (2 - 1 / lamb_pos)
+    logloss = lamb_pos * y_true * K.log(y_pred) + lamb_neg * (1 - y_true) * K.log(1 - y_pred)
+    logloss = -K.mean(K.sum(logloss, axis=-1))
+    
+    smooth_kernel = np.reshape(np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]], dtype=np.float32) / 8, [3, 3, 1, 1])
+    smoothloss = K.mean(K.abs(K.conv2d(y_pred, smooth_kernel)))
+    
+    return logloss + lamb * smoothloss
+
+# Minutiae Score Loss
+def minutiae_score_loss(y_true, y_pred):
+    y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
+    label_seg = K.cast(K.not_equal(y_true, 0.0), K.floatx())
+    y_true = K.switch(K.less(y_true, 0.0), K.zeros_like(y_true), y_true)
+    
+    total_elements = K.sum(label_seg) + K.epsilon()
+    lamb_pos, lamb_neg = 10., 0.5
+    logloss = lamb_pos * y_true * K.log(y_pred) + lamb_neg * (1 - y_true) * K.log(1 - y_pred)
+    logloss = logloss * label_seg
+    return -K.sum(logloss) / total_elements
