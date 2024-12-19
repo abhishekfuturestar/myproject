@@ -1,1 +1,1 @@
-from keras.applications.imagenet_utils import _obtain_input_shape
+ImportError: cannot import name '_obtain_input_shape' from 'keras.applications.imagenet_utils' (C:\Users\2179048\AppData\Local\miniforge3\Lib\site-packages\keras\api\applications\imagenet_utils\__init__.py)
