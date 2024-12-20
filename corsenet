@@ -1,18 +1,53 @@
-Looking for BMP images in: C:/Users/2179048/Downloads/MinutiaeNet-master/MinutiaeNet-master/Dataset/CoarseNet_test\img_files\*.bmp
----------------------------------------------------------------------------
-ValueError                                Traceback (most recent call last)
-Cell In[7], line 25
-     22 set_name = deploy_set.split('/')[-2]
-     24 # Read image and GT
----> 25 img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
-     27 # Create directories (make sure to use os.makedirs if directories do not exist)
-     28 os.makedirs(os.path.join(output_dir, set_name), exist_ok=True)
+def get_maximum_img_size_and_names(dataset, sample_rate=None):
+    """
+    Retrieve image details and calculate the maximum image size.
 
-File ~\Downloads\MinutiaeNet-master\MinutiaeNet-master\CoarseNet\CoarseNet_utils.py:224, in get_maximum_img_size_and_names(dataset, sample_rate)
-    221 img_files = glob.glob(os.path.join(folder, 'img_files', '*.bmp'))
-    223 if not img_files:
---> 224     raise ValueError(f"No images found in folder: {os.path.join(folder, 'img_files')}")
-    226 # Extract image names
-    227 img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
+    Args:
+        dataset: List of dataset directories.
+        sample_rate: Sampling rate for images from each dataset.
 
-ValueError: No images found in folder: C:/Users/2179048/Downloads/MinutiaeNet-master/MinutiaeNet-master/Dataset/CoarseNet_test/img_files/*.bmp\img_files
+    Returns:
+        img_name: List of image names.
+        folder_name: List of corresponding folder names.
+        img_size: Maximum image size, adjusted to be divisible by 8.
+    """
+    if isinstance(dataset, str):  # Ensure dataset is a list
+        dataset = [dataset]
+
+    if sample_rate is None:
+        sample_rate = [1] * len(dataset)
+
+    img_name, folder_name, img_size = [], [], []
+
+    for folder, rate in zip(dataset, sample_rate):
+        # Check if the img_files directory exists
+        img_files_dir = os.path.join(folder, 'img_files')
+        img_files = glob.glob(os.path.join(img_files_dir, '*.bmp'))
+
+        # If no images found in img_files, check if images are directly in the folder
+        if not img_files:
+            img_files = glob.glob(os.path.join(folder, '*.bmp'))
+
+        if not img_files:
+            raise ValueError(f"No images found in folder: {img_files_dir}")
+
+        # Extract image names
+        img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
+
+        # Expand image names and folder names based on the sampling rate
+        img_name.extend(img_name_t * rate)
+        folder_name.extend([folder] * len(img_name_t) * rate)
+
+        # Read the first image to determine its size
+        first_image = imageio.imread(img_files[0])
+        img_size.append(np.array(first_image.shape))
+
+    # Convert to NumPy arrays for processing
+    img_name = np.asarray(img_name)
+    folder_name = np.asarray(folder_name)
+    img_size = np.max(np.asarray(img_size), axis=0)
+
+    # Ensure image size is divisible by 8
+    img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
+
+    return img_name, folder_name, img_size
