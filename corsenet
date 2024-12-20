@@ -1,54 +1,7 @@
-import os
-import glob
-import imageio
-import numpy as np
-
-def get_maximum_img_size_and_names(dataset, sample_rate=None):
-    """
-    Retrieve image details and calculate the maximum image size.
-
-    Args:
-        dataset: List of dataset directories.
-        sample_rate: Sampling rate for images from each dataset.
-
-    Returns:
-        img_name: List of image names.
-        folder_name: List of corresponding folder names.
-        img_size: Maximum image size, adjusted to be divisible by 8.
-    """
-    if isinstance(dataset, str):  # Ensure dataset is a list
-        dataset = [dataset]
-
-    if sample_rate is None:
-        sample_rate = [1] * len(dataset)
-
-    img_name, folder_name, img_size = [], [], []
-
-    for folder, rate in zip(dataset, sample_rate):
+for folder, rate in zip(dataset, sample_rate):
         # Retrieve all image file paths
         img_files_dir = os.path.join(folder, 'img_files')  # This is where .bmp files should be
         img_files = glob.glob(os.path.join(img_files_dir, '*.bmp'))  # Find all bmp files
 
         if not img_files:
             raise ValueError(f"No images found in folder: {img_files_dir}")  # Debug the correct folder path
-
-        # Extract image names (remove extensions)
-        img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
-
-        # Expand image names and folder names based on the sampling rate
-        img_name.extend(img_name_t * rate)
-        folder_name.extend([folder] * len(img_name_t) * rate)
-
-        # Read the first image to determine its size
-        first_image = imageio.imread(img_files[0])
-        img_size.append(np.array(first_image.shape))
-
-    # Convert to NumPy arrays for processing
-    img_name = np.asarray(img_name)
-    folder_name = np.asarray(folder_name)
-    img_size = np.max(np.asarray(img_size), axis=0)
-
-    # Ensure image size is divisible by 8
-    img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
-
-    return img_name, folder_name, img_size
