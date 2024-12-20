@@ -28,7 +28,7 @@ def sub_load_data(data, img_size, aug):
 
     img = read_image(f"{dataset}img_files/{img_name}.bmp", mode='L')
     if img is None:
-        raise ValueError(f"Image file {img_name}.bmp not found.")
+        raise ValueError(f"Image file {img_name}.bmp not found in {dataset}img_files/")
 
     seg = read_image(f"{dataset}seg_files/{img_name}.bmp", mode='L')
     if seg is None:
@@ -134,7 +134,6 @@ def load_data(dataset, tra_ori_model, rand=False, aug=0.0, batch_size=1, sample_
 
 
 # Function to get image names, folder names, and calculate maximum image size
-
 import os
 import glob
 import imageio
@@ -166,8 +165,11 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
         img_files_dir = os.path.join(folder, 'img_files')  # This is where .bmp files should be
         img_files = glob.glob(os.path.join(img_files_dir, '*.bmp'))  # Find all bmp files
 
+        # Debugging print statement to confirm correct path
+        print(f"Looking for images in: {img_files_dir}")
+
         if not img_files:
-            raise ValueError(f"No images found in folder: {img_files_dir}")  # Debug the correct folder path
+            raise ValueError(f"No images found in folder: {img_files_dir}")
 
         # Extract image names (remove extensions)
         img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
@@ -193,28 +195,4 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
 
 # Define the orientation function
 def orientation(x, stride=8, window=17):
-    """Compute orientation of the image using Sobel filters."""
-    # Ensure the input is grayscale
-    assert x.shape[-1] == 1, "Input images must be grayscale"
-
-    # Define Sobel filters
-    sobelx = tf.constant([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=tf.float32)
-    sobely = tf.constant([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=tf.float32)
-    
-    # Reshape Sobel filters for use in conv2d
-    sobelx = tf.reshape(sobelx, [3, 3, 1, 1])
-    sobely = tf.reshape(sobely, [3, 3, 1, 1])
-
-    # Compute gradients using Sobel filters
-    Ix = tf.nn.conv2d(x, sobelx, strides=[1, 1, 1, 1], padding='SAME')
-    Iy = tf.nn.conv2d(x, sobely, strides=[1, 1, 1, 1], padding='SAME')
-
-    # Compute gradient components for orientation calculation
-    Gxx = tf.nn.conv2d(Ix**2, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
-    Gyy = tf.nn.conv2d(Iy**2, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
-    Gxy = tf.nn.conv2d(Ix * Iy, tf.ones((window, window, 1, 1)), strides=[1, stride, stride, 1], padding='SAME')
-    
-    # Calculate orientation angle using the gradients
-    theta = 0.5 * tf.atan2(2 * Gxy, Gxx - Gyy)
-
-    return theta
+    """Compute orientation
