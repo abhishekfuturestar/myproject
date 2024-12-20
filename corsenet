@@ -1,3 +1,196 @@
+from functools import partial
+from multiprocessing import Pool
+from MinutiaeNet_utils import *
+from scipy import ndimage, signal, sparse
+import numpy as np
+import imageio
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Lambda
+import glob
+import os
+from scipy.sparse import coo_matrix
+
+
+# Helper function to read images
+def read_image(filepath, mode='L'):
+    try:
+        img = imageio.imread(filepath, pilmode=mode)
+    except FileNotFoundError:
+        img = None
+    return img
+
+
+# Sub-load data function
+def sub_load_data(data, img_size, aug):
+    img_name, dataset = data
+
+    img = read_image(f"{dataset}img_files/{img_name}.bmp", mode='L')
+    if img is None:
+        raise ValueError(f"Image file {img_name}.bmp not found.")
+
+    seg = read_image(f"{dataset}seg_files/{img_name}.bmp", mode='L')
+    if seg is None:
+        seg = np.ones_like(img)
+
+    ali = read_image(f"{dataset}ori_files/{img_name}.jpg", mode='L')
+    if ali is None:
+        ali = np.zeros_like(img)
+
+    mnt = np.array(mnt_reader(f"{dataset}mnt_files/{img_name}.mnt"), dtype=float)
+
+    if any(img.shape != img_size):
+        if np.random.rand() < aug:
+            tra = np.int32(np.random.rand(2) * (np.array(img_size) - np.array(img.shape)))
+        else:
+            tra = np.int32(0.5 * (np.array(img_size) - np.array(img.shape)))
+
+        img_t = np.ones(img_size) * np.mean(img)
+        seg_t = np.zeros(img_size)
+        ali_t = np.ones(img_size) * np.mean(ali)
+
+        img_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = img
+        seg_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = seg
+        ali_t[tra[0]:tra[0] + img.shape[0], tra[1]:tra[1] + img.shape[1]] = ali
+
+        img = img_t
+        seg = seg_t
+        ali = ali_t
+        mnt = mnt + np.array([tra[1], tra[0], 0])
+
+    if np.random.rand() < aug:
+        rot = np.random.rand() * 360
+        tra = (np.random.rand(2) - 0.5) / 2 * img_size
+
+        img = ndimage.rotate(img, rot, reshape=False, mode='reflect')
+        img = ndimage.shift(img, tra, mode='reflect')
+        seg = ndimage.rotate(seg, rot, reshape=False, mode='constant')
+        seg = ndimage.shift(seg, tra, mode='constant')
+        ali = ndimage.rotate(ali, rot, reshape=False, mode='reflect')
+        ali = ndimage.shift(ali, tra, mode='reflect')
+
+        mnt_r = point_rot(mnt[:, :2], rot / 180 * np.pi, img.shape, img.shape)
+        mnt = np.column_stack((mnt_r + tra[[1, 0]], mnt[:, 2] - rot / 180 * np.pi))
+
+    mnt = mnt[(8 <= mnt[:, 0]) * (mnt[:, 0] < img_size[1] - 8) * (8 <= mnt[:, 1]) * (mnt[:, 1] < img_size[0] - 8), :]
+
+    return img, seg, ali, mnt
+
+
+# Main load data function
+def load_data(dataset, tra_ori_model, rand=False, aug=0.0, batch_size=1, sample_rate=None):
+    if isinstance(dataset[0], str):
+        img_name, folder_name, img_size = get_maximum_img_size_and_names(dataset, sample_rate)
+    else:
+        img_name, folder_name, img_size = dataset
+
+    if rand:
+        rand_idx = np.arange(len(img_name))
+        np.random.shuffle(rand_idx)
+        img_name = img_name[rand_idx]
+        folder_name = folder_name[rand_idx]
+
+    if batch_size > 1 and use_multiprocessing:
+        p = Pool(batch_size)
+
+    p_sub_load_data = partial(sub_load_data, img_size=img_size, aug=aug)
+
+    for i in range(0, len(img_name), batch_size):
+        have_alignment = np.ones([batch_size, 1, 1, 1])
+        image = np.zeros((batch_size, img_size[0], img_size[1], 1))
+        segment = np.zeros((batch_size, img_size[0], img_size[1], 1))
+        alignment = np.zeros((batch_size, img_size[0], img_size[1], 1))
+
+        minutiae_w = np.zeros((batch_size, img_size[0] // 8, img_size[1] // 8, 1)) - 1
+        minutiae_h = np.zeros((batch_size, img_size[0] // 8, img_size[1] // 8, 1)) - 1
+        minutiae_o = np.zeros((batch_size, img_size[0] // 8, img_size[1] // 8, 1)) - 1
+
+        batch_name = [img_name[(i + j) % len(img_name)] for j in range(batch_size)]
+        batch_f_name = [folder_name[(i + j) % len(img_name)] for j in range(batch_size)]
+
+        if batch_size > 1 and use_multiprocessing:
+            results = p.map(p_sub_load_data, zip(batch_name, batch_f_name))
+        else:
+            results = map(p_sub_load_data, zip(batch_name, batch_f_name))
+
+        for j, (img, seg, ali, mnt) in enumerate(results):
+            if np.sum(ali) == 0:
+                have_alignment[j, 0, 0, 0] = 0
+            image[j, :, :, 0] = img / 255.0
+            segment[j, :, :, 0] = seg / 255.0
+            alignment[j, :, :, 0] = ali / 255.0
+
+            valid_idx = (mnt[:, 1] // 8).astype(int), (mnt[:, 0] // 8).astype(int)
+            minutiae_w[j][valid_idx] = mnt[:, 0] % 8
+            minutiae_h[j][valid_idx] = mnt[:, 1] % 8
+            minutiae_o[j][valid_idx] = mnt[:, 2]
+
+        yield image, alignment, batch_name
+
+    if batch_size > 1 and use_multiprocessing:
+        p.close()
+        p.join()
+
+
+# Function to get image names, folder names, and calculate maximum image size
+
+def get_maximum_img_size_and_names(dataset, sample_rate=None):
+    """
+    Retrieve image details and calculate the maximum image size.
+
+    Args:
+        dataset: List of dataset directories.
+        sample_rate: Sampling rate for images from each dataset.
+
+    Returns:
+        img_name: List of image names.
+        folder_name: List of corresponding folder names.
+        img_size: Maximum image size, adjusted to be divisible by 8.
+    """
+    if isinstance(dataset, str):  # Ensure dataset is a list
+        dataset = [dataset]
+
+    if sample_rate is None:
+        sample_rate = [1] * len(dataset)
+
+    img_name, folder_name, img_size = [], [], []
+
+    for folder, rate in zip(dataset, sample_rate):
+        # Check if the img_files directory exists
+        img_files_dir = os.path.join(folder, 'img_files')
+        img_files = glob.glob(os.path.join(img_files_dir, '*.bmp'))
+
+        # If no images found in img_files, check if images are directly in the folder
+        if not img_files:
+            img_files = glob.glob(os.path.join(folder, '*.bmp'))
+
+        if not img_files:
+            raise ValueError(f"No images found in folder: {img_files_dir}")
+
+        # Extract image names
+        img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
+
+        # Expand image names and folder names based on the sampling rate
+        img_name.extend(img_name_t * rate)
+        folder_name.extend([folder] * len(img_name_t) * rate)
+
+        # Read the first image to determine its size
+        first_image = imageio.imread(img_files[0])
+        img_size.append(np.array(first_image.shape))
+
+    # Convert to NumPy arrays for processing
+    img_name = np.asarray(img_name)
+    folder_name = np.asarray(folder_name)
+    img_size = np.max(np.asarray(img_size), axis=0)
+
+    # Ensure image size is divisible by 8
+    img_size = np.array(np.ceil(img_size / 8) * 8, dtype=np.int32)
+
+    return img_name, folder_name, img_size
+
+
+# Define the orientation function
 def orientation(x, stride=8, window=17):
     """Compute orientation of the image using Sobel filters."""
     # Ensure the input is grayscale
