@@ -1,1 +1,1 @@
-tf.compat.v1.disable_eager_execution()
+ValueError: No images found in folder: C:/Users/2179048/Downloads/MinutiaeNet-master/MinutiaeNet-master/Dataset/CoarseNet_test/img_files/*.bmp\img_files
