@@ -1,16 +1,3 @@
-ValueError                                Traceback (most recent call last)
-Cell In[5], line 5
-      2 set_name = deploy_set.split('/')[-2]
-      4 # Read image and GT
-----> 5 img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
-      7 mkdir(output_dir + '/'+ set_name + '/')
-      8 mkdir(output_dir + '/' + set_name + '/mnt_results/')
+inference_set = ['C:/Users/2179048/Downloads/MinutiaeNet-master/MinutiaeNet-master/Dataset/CoarseNet_test/img_files/*.bmp']
 
-File ~\Downloads\MinutiaeNet-master\MinutiaeNet-master\CoarseNet\CoarseNet_utils.py:224, in get_maximum_img_size_and_names(dataset, sample_rate)
-    221 img_files = glob.glob(os.path.join(folder, 'img_files', '*.bmp'))
-    223 if not img_files:
---> 224     raise ValueError(f"No images found in folder: {os.path.join(folder, 'img_files')}")
-    226 # Extract image names
-    227 img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
-
-ValueError: No images found in folder: C:/Users/2179048/Downloads/MinutiaeNet-master/MinutiaeNet-master/Dataset/CoarseNet_test/img_files/*.bmp\img_files
+loaction of images is : C:\Users\2179048\Downloads\MinutiaeNet-master\MinutiaeNet-master\Dataset\CoarseNet_test\img_files
