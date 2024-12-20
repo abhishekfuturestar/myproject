@@ -1,4 +1,7 @@
 
+ValueError: No images found in folder: C:/Users/2179048/Downloads/MinutiaeNet-master/MinutiaeNet-master/Dataset/CoarseNet_test/img_files/*.bmp\img_files
+
+
 .bmp file is avaialbe in this location:C:\Users\2179048\Downloads\MinutiaeNet-master\MinutiaeNet-master\Dataset\CoarseNet_test\img_files
 for folder, rate in zip(dataset, sample_rate):
         # Retrieve all image file paths
