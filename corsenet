@@ -1,3 +1,5 @@
+
+.bmp file is avaialbe in this location:C:\Users\2179048\Downloads\MinutiaeNet-master\MinutiaeNet-master\Dataset\CoarseNet_test\img_files
 for folder, rate in zip(dataset, sample_rate):
         # Retrieve all image file paths
         img_files_dir = os.path.join(folder, 'img_files')  # This is where .bmp files should be
