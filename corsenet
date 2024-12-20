@@ -1,3 +1,29 @@
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+Cell In[6], line 25
+     22 set_name = deploy_set.split('/')[-2]
+     24 # Read image and GT
+---> 25 img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
+     27 # Create directories (make sure to use os.makedirs if directories do not exist)
+     28 os.makedirs(os.path.join(output_dir, set_name), exist_ok=True)
+
+File ~\Downloads\MinutiaeNet-master\MinutiaeNet-master\CoarseNet\CoarseNet_utils.py:169, in get_maximum_img_size_and_names(dataset, sample_rate)
+    166     img_files = glob.glob(os.path.join(folder, '*.bmp'))
+    168 if not img_files:
+--> 169     raise ValueError(f"No images found in folder: {img_files_dir}")
+    171 # Extract image names
+    172 img_name_t = [os.path.basename(f).split('.')[0] for f in img_files]
+
+ValueError: No images found in folder: C:/Users/2179048/Downloads/MinutiaeNet-master/MinutiaeNet-master/Dataset/CoarseNet_test/img_files/*.bmp\img_files
+
+
+
+
+
+
+
+
+
 from functools import partial
 from multiprocessing import Pool
 from MinutiaeNet_utils import *
