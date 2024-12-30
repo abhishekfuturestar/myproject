@@ -1,25 +1,19 @@
-
 from __future__ import absolute_import
 from __future__ import division
 
-from keras.models import Model
-from keras.layers import Activation, AveragePooling2D, BatchNormalization, Concatenate, Conv2D, Dense, GlobalAveragePooling2D
-from keras.layers import Input, Lambda, MaxPooling2D
-#from keras_applications.imagenet_utils import _obtain_input_shape
-from tensorflow.keras.applications.imagenet_utils import _obtain_input_shape
-from keras.applications import get_input_shape
-#from keras.applications.imagenet_utils import _obtain_input_shape  # Corrected import
-
-from keras import backend as K
+import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Activation, AveragePooling2D, BatchNormalization, Concatenate, Conv2D, Dense, GlobalAveragePooling2D
+from tensorflow.keras.layers import Input, Lambda, MaxPooling2D
+from tensorflow.keras.applications import get_input_shape
+from tensorflow.keras import backend as K
 import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 
 def preprocess_input(x):
-    """Preprocesses a numpy array encoding a batch of images.
-
-    """
-    return keras.applications.imagenet_utils.preprocess_input(x, mode='tf')
+    """Preprocesses a numpy array encoding a batch of images."""
+    return tf.keras.applications.imagenet_utils.preprocess_input(x, mode='tf')
 
 
 def conv2d_bn(x,
@@ -30,9 +24,7 @@ def conv2d_bn(x,
               activation='relu',
               use_bias=False,
               name=None):
-    """Utility function to apply conv + BN.
-
-    """
+    """Utility function to apply conv + BN."""
     x = Conv2D(filters,
                kernel_size,
                strides=strides,
@@ -50,9 +42,7 @@ def conv2d_bn(x,
 
 
 def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
-    """Inception-ResNet block.
-
-    """
+    """Inception-ResNet block."""
     if block_type == 'block35':
         branch_0 = conv2d_bn(x, 32, 1)
         branch_1 = conv2d_bn(x, 32, 1)
@@ -96,19 +86,15 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
         x = Activation(activation, name=block_name + '_ac')(x)
     return x
 
-def FineNetmodel(num_classes = 2, pretrained_path = None, input_shape = None):
-    """Create FineNet architecture.
 
-    """
-    # Determine proper input shape
-    input_shape = _obtain_input_shape(
-        input_shape,
-        default_size=299,
-        min_size=139,
-        data_format=K.image_data_format(),
-        require_flatten=False,
-        weights=pretrained_path)
-
+def FineNetmodel(num_classes=2, pretrained_path=None, input_shape=None):
+    """Create FineNet architecture."""
+    # Determine proper input shape using get_input_shape
+    input_shape = get_input_shape(input_shape,
+                                   default_size=299,
+                                   min_size=139,
+                                   data_format=K.image_data_format(),
+                                   require_flatten=False)
 
     img_input = Input(shape=input_shape)
 
@@ -182,55 +168,4 @@ def FineNetmodel(num_classes = 2, pretrained_path = None, input_shape = None):
                                block_idx=10)
 
     # Final convolution block: 8 x 8 x 1536
-    x = conv2d_bn(x, 1536, 1, name='conv_7b')
-
-    # Classification block
-    x = GlobalAveragePooling2D(name='avg_pool')(x)
-    x = Dense(num_classes, activation='softmax', name='predictions')(x)
-
-
-    inputs = img_input
-
-    # Create model
-    model = Model(inputs, x, name='FineNet')
-
-    # Load weights
-    if pretrained_path != None:
-        print('Loading FineNet weights from %s'%(pretrained_path))
-        model.load_weights(pretrained_path)
-
-    return model
-
-def plot_confusion_matrix(cm, classes,
-                          normalize=False,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    """
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
-
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        print("Normalized confusion matrix")
-    else:
-        print('Confusion matrix, without normalization')
-
-    print(cm)
-
-    thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j],
-                 horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
-
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.show()
+    x = conv2d
