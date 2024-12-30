@@ -1,1 +1,1 @@
-ImportError: cannot import name 'get_input_shape' from 'keras.applications' (C:\Users\2179048\AppData\Local\miniforge3\Lib\site-packages\keras\api\applications\__init__.py)
+from tensorflow.keras.applications.imagenet_utils import _obtain_input_shape
