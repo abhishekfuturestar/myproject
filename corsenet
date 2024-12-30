@@ -6,7 +6,7 @@ Cell In[8], line 11
      12 from CoarseNet_model import *
      13 import argparsea
 
-File ~\Downloads\MinutiaeNet_Modified_Latest\CoarseNet\CoarseNet_utils.py:366
+File ~\Downloads\MinutiaeNet_Modified_Latest\CoarseNet\CoarseNet_utils.py:366a
     364     model = Model(inputs=[img_input,], outputs=[theta,])
     365     return model
 --> 366 tra_ori_model = get_tra_ori()
@@ -37,7 +37,7 @@ File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\core\lambda_l
      98             "argument for this Lambda layer."
      99         )
     101 if callable(self._output_shape):
-    102     return self._output_shape(input_shape)
+    102     return self._output_shape(input_shape)  
 
 NotImplementedError: Exception encountered when calling Lambda.call().
 
