@@ -167,5 +167,4 @@ def FineNetmodel(num_classes=2, pretrained_path=None, input_shape=None):
                                block_type='block8',
                                block_idx=10)
 
-    # Final convolution block: 8 x 8 x 1536
-    x = conv2d
+ 
