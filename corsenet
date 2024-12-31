@@ -1,11 +1,13 @@
-def compute_output_shape(input_shape):
-    # Example: Keep height and width the same, but output 1 channel
+# Define output shape for ori_highest_peak
+def compute_output_shape_ori_highest_peak(input_shape):
+    # Example: Keeps height and width same, reduces channels to 1
     return input_shape[:-1] + (1,)
 
-ori_peak = Lambda(ori_highest_peak, output_shape=compute_output_shape)(ori_out_1)
+# Define output shape for select_max
+def compute_output_shape_select_max(input_shape):
+    # Example: Keeps the same shape as the input
+    return input_shape
 
-
-
-
-    ori_peak = Lambda(ori_highest_peak)(ori_out_1)
-    ori_peak = Lambda(select_max)(ori_peak) # select max ori and set it to 1
+# Modify Lambda layers
+ori_peak = Lambda(ori_highest_peak, output_shape=compute_output_shape_ori_highest_peak)(ori_out_1)
+ori_peak = Lambda(select_max, output_shape=compute_output_shape_select_max)(ori_peak)
