@@ -1,12 +1,71 @@
-from tensorflow.keras.layers import Lambda, Input
+ValueError                                Traceback (most recent call last)
+Cell In[5], line 15
+     10 mkdir(output_dir + '/' + set_name + '/OF_results/')
+     12 logging.info("Predicting \"%s\":" % (set_name))
+---> 15 main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
+     17 # ====== Load FineNet to verify
+     18 if isHavingFineNet == True:
 
-def img_normalization(x):
-    # Replace this with your actual normalization logic
-    return (x - tf.reduce_mean(x)) / tf.math.reduce_std(x)
+File ~\Downloads\MinutiaeNet_Modified_Latest\CoarseNet\CoarseNet_model.py:177, in CoarseNetmodel(input_shape, weights_path, mode)
+    173 # ----------------------------------------------------------------------------
+    174 # enhance part
+    175 filters_cos, filters_sin = gabor_bank(stride=2, Lambda=8)
+--> 177 filter_img_real = Conv2D(filters_cos.shape[3],(filters_cos.shape[0],filters_cos.shape[1]),
+    178     weights=[filters_cos, np.zeros([filters_cos.shape[3]])], padding='same',
+    179     name='enh_img_real_1')(img_input)
+    180 filter_img_imag = Conv2D(filters_sin.shape[3],(filters_sin.shape[0],filters_sin.shape[1]),
+    181     weights=[filters_sin, np.zeros([filters_sin.shape[3]])], padding='same',
+    182     name='enh_img_imag_1')(img_input)
+    184 ori_peak = Lambda(ori_highest_peak)(ori_out_1)
 
-def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
-    img_input = Input(input_shape)
-    bn_img = Lambda(img_normalization, 
-                    name='img_normalized', 
-                    output_shape=lambda input_shape: input_shape)(img_input)
-    # Continue defining the rest of your model...
+File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\convolutional\conv2d.py:109, in Conv2D.__init__(self, filters, kernel_size, strides, padding, data_format, dilation_rate, groups, activation, use_bias, kernel_initializer, bias_initializer, kernel_regularizer, bias_regularizer, activity_regularizer, kernel_constraint, bias_constraint, **kwargs)
+     89 def __init__(
+     90     self,
+     91     filters,
+   (...)
+    107     **kwargs,
+    108 ):
+--> 109     super().__init__(
+    110         rank=2,
+    111         filters=filters,
+    112         kernel_size=kernel_size,
+    113         strides=strides,
+    114         padding=padding,
+    115         data_format=data_format,
+    116         dilation_rate=dilation_rate,
+    117         groups=groups,
+    118         activation=activation,
+    119         use_bias=use_bias,
+    120         kernel_initializer=kernel_initializer,
+    121         bias_initializer=bias_initializer,
+    122         kernel_regularizer=kernel_regularizer,
+    123         bias_regularizer=bias_regularizer,
+    124         activity_regularizer=activity_regularizer,
+    125         kernel_constraint=kernel_constraint,
+    126         bias_constraint=bias_constraint,
+    127         **kwargs,
+    128     )
+
+File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\convolutional\base_conv.py:107, in BaseConv.__init__(self, rank, filters, kernel_size, strides, padding, data_format, dilation_rate, groups, activation, use_bias, kernel_initializer, bias_initializer, kernel_regularizer, bias_regularizer, activity_regularizer, kernel_constraint, bias_constraint, lora_rank, **kwargs)
+     85 def __init__(
+     86     self,
+     87     rank,
+   (...)
+    105     **kwargs,
+    106 ):
+--> 107     super().__init__(activity_regularizer=activity_regularizer, **kwargs)
+    108     self.rank = rank
+    109     self.filters = filters
+
+File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\layer.py:285, in Layer.__init__(self, activity_regularizer, trainable, dtype, autocast, name, **kwargs)
+    283     self._input_shape_arg = input_shape_arg
+    284 if kwargs:
+--> 285     raise ValueError(
+    286         "Unrecognized keyword arguments "
+    287         f"passed to {self.__class__.__name__}: {kwargs}"
+    288     )
+    290 self._path = None  # Will be determined in `build_wrapper`
+    291 self.built = False
+
+ValueError: Unrecognized keyword arguments passed to Conv2D: {'weights': [array([[[[-1.17436285e-02, -9.24549250e-03, -6.52565168e-03, ...,
+          -1.04063004e-02, -1.32306932e-02, -1.33598157e-02]],
