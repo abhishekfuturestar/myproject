@@ -1,41 +1,19 @@
-otImplementedError                       Traceback (most recent call last)
-Cell In[6], line 15
-     10 mkdir(output_dir + '/' + set_name + '/OF_results/')
-     12 logging.info("Predicting \"%s\":" % (set_name))
----> 15 main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
-     17 # ====== Load FineNet to verify
-     18 if isHavingFineNet == True:
+# Define output shape functions
+def compute_output_shape_reduce_sum(input_shape):
+    # Assuming reduce_sum reduces the last dimension (e.g., channel-wise summation)
+    return input_shape[:-1]
 
-File ~\Downloads\MinutiaeNet_Modified_Latest\CoarseNet\CoarseNet_model.py:225, in CoarseNetmodel(input_shape, weights_path, mode)
-    222 upsample_seg = UpSampling2D(size=(8,8))(seg_round)
-    223 mul_mask_real = Lambda(merge_mul)([filter_img_real, upsample_ori])
---> 225 enh_img_real = Lambda(reduce_sum, name='enh_img_real_2')(mul_mask_real)
-    226 mul_mask_imag = Lambda(merge_mul)([filter_img_imag, upsample_ori])
-    228 enh_img_imag = Lambda(reduce_sum, name='enh_img_imag_2')(mul_mask_imag)
+# Updated `enh_img_real` and `enh_img_imag` with explicit output shapes
+enh_img_real = Lambda(
+    reduce_sum, 
+    output_shape=compute_output_shape_reduce_sum, 
+    name='enh_img_real_2'
+)(mul_mask_real)
 
-File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\utils\traceback_utils.py:122, in filter_traceback.<locals>.error_handler(*args, **kwargs)
-    119     filtered_tb = _process_traceback_frames(e.__traceback__)
-    120     # To get the full stack trace, call:
-    121     # `keras.config.disable_traceback_filtering()`
---> 122     raise e.with_traceback(filtered_tb) from None
-    123 finally:
-    124     del filtered_tb
+enh_img_imag = Lambda(
+    reduce_sum, 
+    output_shape=compute_output_shape_reduce_sum, 
+    name='enh_img_imag_2'
+)(mul_mask_imag)
 
-File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\core\lambda_layer.py:95, in Lambda.compute_output_shape(self, input_shape)
-     93         return tree.map_structure(lambda x: x.shape, output_spec)
-     94     except:
----> 95         raise NotImplementedError(
-     96             "We could not automatically infer the shape of "
-     97             "the Lambda's output. Please specify the `output_shape` "
-     98             "argument for this Lambda layer."
-     99         )
-    101 if callable(self._output_shape):
-    102     return self._output_shape(input_shape)
-
-NotImplementedError: Exception encountered when calling Lambda.call().
-
-We could not automatically infer the shape of the Lambda's output. Please specify the `output_shape` argument for this Lambda layer.
-
-Arguments received by Lambda.call():
-  • args=('<KerasTensor shape=(None, None, None, 90), dtype=float32, sparse=False, name=keras_tensor_270>',)
-  • kwargs={'mask': 'None'}
+enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
