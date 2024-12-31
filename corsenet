@@ -1,70 +1,12 @@
-Predicting "CoarseNet_test":
----------------------------------------------------------------------------
-ValueError                                Traceback (most recent call last)
-Cell In[5], line 15
-     10 mkdir(output_dir + '/' + set_name + '/OF_results/')
-     12 logging.info("Predicting \"%s\":" % (set_name))
----> 15 main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
-     17 # ====== Load FineNet to verify
-     18 if isHavingFineNet == True:
+# Create the Conv2D layer
+filter_img_imag_layer = Conv2D(filters_sin.shape[3], 
+                               (filters_sin.shape[0], filters_sin.shape[1]), 
+                               padding='same', 
+                               name='enh_img_imag_1')
 
-File ~\Downloads\MinutiaeNet_Modified_Latest\CoarseNet\CoarseNet_model.py:191, in CoarseNetmodel(input_shape, weights_path, mode)
-    187 filter_img_real_layer.set_weights([filters_cos, np.zeros([filters_cos.shape[3]])])
-    188 filter_img_real = filter_img_real_layer(img_input)
---> 191 filter_img_imag = Conv2D(filters_sin.shape[3],(filters_sin.shape[0],filters_sin.shape[1]),
-    192     weights=[filters_sin, np.zeros([filters_sin.shape[3]])], padding='same',
-    193     name='enh_img_imag_1')(img_input)
-    195 ori_peak = Lambda(ori_highest_peak)(ori_out_1)
-    196 ori_peak = Lambda(select_max)(ori_peak) # select max ori and set it to 1
+# Set the weights for the layer
+filter_img_imag_layer.build(input_shape=img_input.shape)
+filter_img_imag_layer.set_weights([filters_sin, np.zeros([filters_sin.shape[3]])])
 
-File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\convolutional\conv2d.py:109, in Conv2D.__init__(self, filters, kernel_size, strides, padding, data_format, dilation_rate, groups, activation, use_bias, kernel_initializer, bias_initializer, kernel_regularizer, bias_regularizer, activity_regularizer, kernel_constraint, bias_constraint, **kwargs)
-     89 def __init__(
-     90     self,
-     91     filters,
-   (...)
-    107     **kwargs,
-    108 ):
---> 109     super().__init__(
-    110         rank=2,
-    111         filters=filters,
-    112         kernel_size=kernel_size,
-    113         strides=strides,
-    114         padding=padding,
-    115         data_format=data_format,
-    116         dilation_rate=dilation_rate,
-    117         groups=groups,
-    118         activation=activation,
-    119         use_bias=use_bias,
-    120         kernel_initializer=kernel_initializer,
-    121         bias_initializer=bias_initializer,
-    122         kernel_regularizer=kernel_regularizer,
-    123         bias_regularizer=bias_regularizer,
-    124         activity_regularizer=activity_regularizer,
-    125         kernel_constraint=kernel_constraint,
-    126         bias_constraint=bias_constraint,
-    127         **kwargs,
-    128     )
-
-File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\convolutional\base_conv.py:107, in BaseConv.__init__(self, rank, filters, kernel_size, strides, padding, data_format, dilation_rate, groups, activation, use_bias, kernel_initializer, bias_initializer, kernel_regularizer, bias_regularizer, activity_regularizer, kernel_constraint, bias_constraint, lora_rank, **kwargs)
-     85 def __init__(
-     86     self,
-     87     rank,
-   (...)
-    105     **kwargs,
-    106 ):
---> 107     super().__init__(activity_regularizer=activity_regularizer, **kwargs)
-    108     self.rank = rank
-    109     self.filters = filters
-
-File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\layer.py:285, in Layer.__init__(self, activity_regularizer, trainable, dtype, autocast, name, **kwargs)
-    283     self._input_shape_arg = input_shape_arg
-    284 if kwargs:
---> 285     raise ValueError(
-    286         "Unrecognized keyword arguments "
-    287         f"passed to {self.__class__.__name__}: {kwargs}"
-    288     )
-    290 self._path = None  # Will be determined in `build_wrapper`
-    291 self.built = False
-
-ValueError: Unrecognized keyword arguments passed to Conv2D: {'weights': [array([[[[-4.31453910e-18,  3.09650871e-03,  4.80288221e-03, ...,
-           1.75985793e-02,  1.07078530e-02,  4.64576161e-03]],
+# Apply the layer to the input
+filter_img_imag = filter_img_imag_layer(img_input)
