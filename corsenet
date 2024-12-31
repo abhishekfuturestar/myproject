@@ -1,24 +1,53 @@
- upsample_ori = UpSampling2D(size=(8, 8))(ori_peak)
-    
-    seg_round = Activation('softsign')(seg_out)
-    
-    upsample_seg = UpSampling2D(size=(8, 8))(seg_round)
-    
-    mul_mask_real = Lambda(merge_mul)([filter_img_real, upsample_ori])
-    
-    def compute_output_shape_reduce_sum(input_shape):
-         return input_shape[:-1]
-        
-    enh_img_real = Lambda(
-    reduce_sum, 
-    output_shape=compute_output_shape_reduce_sum, 
+# Upsample the orientation map
+upsample_ori = UpSampling2D(size=(8, 8))(ori_peak)
+
+# Apply activation to segment output
+seg_round = Activation('softsign')(seg_out)
+
+# Upsample the segmentation map
+upsample_seg = UpSampling2D(size=(8, 8))(seg_round)
+
+# Define a function for element-wise multiplication
+def merge_mul(inputs):
+    return inputs[0] * inputs[1]  # Element-wise multiplication
+
+# Element-wise multiplication for real components
+mul_mask_real = Lambda(merge_mul)([filter_img_real, upsample_ori])
+
+# Define a function for the reduce_sum Lambda layer
+def reduce_sum(inputs):
+    return tf.reduce_sum(inputs, axis=-1, keepdims=False)
+
+def compute_output_shape_reduce_sum(input_shape):
+    return input_shape[:-1]  # Reduce the last dimension
+
+# Sum the results of the real components
+enh_img_real = Lambda(
+    reduce_sum,
+    output_shape=compute_output_shape_reduce_sum,
     name='enh_img_real_2'
 )(mul_mask_real)
-    
-    mul_mask_imag = Lambda(merge_mul)([filter_img_imag, upsample_ori])
 
-    enh_img_imag = Lambda(reduce_sum,output_shape=compute_output_shape_reduce_sum,  name='enh_img_imag_2')(mul_mask_imag)
-    
-    enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
-    enh_seg_img = Lambda(merge_concat, name='phase_seg_img')([enh_img, upsample_seg])
-    
+# Element-wise multiplication for imaginary components
+mul_mask_imag = Lambda(merge_mul)([filter_img_imag, upsample_ori])
+
+# Sum the results of the imaginary components
+enh_img_imag = Lambda(
+    reduce_sum,
+    output_shape=compute_output_shape_reduce_sum,
+    name='enh_img_imag_2'
+)(mul_mask_imag)
+
+# Define atan2 operation
+def atan2(inputs):
+    return tf.math.atan2(inputs[0], inputs[1])  # Compute phase angle
+
+# Compute the phase of the image
+enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
+
+# Define a function for concatenation
+def merge_concat(inputs):
+    return tf.concat(inputs, axis=-1)  # Concatenate along the last axis
+
+# Concatenate the phase image with the upsampled segmentation map
+enh_seg_img = Lambda(merge_concat, name='phase_seg_img')([enh_img, upsample_seg])
