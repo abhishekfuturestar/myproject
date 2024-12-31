@@ -1,25 +1,24 @@
----------------------------------------------------------------------------
-NameError                                 Traceback (most recent call last)
-Cell In[6], line 15
-     10 mkdir(output_dir + '/' + set_name + '/OF_results/')
-     12 logging.info("Predicting \"%s\":" % (set_name))
----> 15 main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
-     17 # ====== Load FineNet to verify
-     18 if isHavingFineNet == True:
+ upsample_ori = UpSampling2D(size=(8, 8))(ori_peak)
+    
+    seg_round = Activation('softsign')(seg_out)
+    
+    upsample_seg = UpSampling2D(size=(8, 8))(seg_round)
+    
+    mul_mask_real = Lambda(merge_mul)([filter_img_real, upsample_ori])
+    
+    def compute_output_shape_reduce_sum(input_shape):
+         return input_shape[:-1]
+        
+    enh_img_real = Lambda(
+    reduce_sum, 
+    output_shape=compute_output_shape_reduce_sum, 
+    name='enh_img_real_2'
+)(mul_mask_real)
+    
+    mul_mask_imag = Lambda(merge_mul)([filter_img_imag, upsample_ori])
 
-File ~\Downloads\MinutiaeNet_Modified_Latest\CoarseNet\CoarseNet_model.py:248, in CoarseNetmodel(input_shape, weights_path, mode)
-    241     def compute_output_shape_reduce_sum(input_shape):
-    242         return input_shape[:-1]
-    244     enh_img_real = Lambda(
-    245     reduce_sum, 
-    246     output_shape=compute_output_shape_reduce_sum, 
-    247     name='enh_img_real_2'
---> 248 )(mul_mask_real)
-    250     enh_img_imag = Lambda(
-    251     reduce_sum, 
-    252     output_shape=compute_output_shape_reduce_sum, 
-    253     name='enh_img_imag_2'
-    254 )(mul_mask_imag)
-    256     enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
-
-NameError: name 'mul_mask_real' is not defined
+    enh_img_imag = Lambda(reduce_sum,output_shape=compute_output_shape_reduce_sum,  name='enh_img_imag_2')(mul_mask_imag)
+    
+    enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
+    enh_seg_img = Lambda(merge_concat, name='phase_seg_img')([enh_img, upsample_seg])
+    
