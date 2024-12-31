@@ -1,19 +1,24 @@
-# Define output shape functions
-def compute_output_shape_reduce_sum(input_shape):
-    # Assuming reduce_sum reduces the last dimension (e.g., channel-wise summation)
-    return input_shape[:-1]
+ameError                                 Traceback (most recent call last)
+Cell In[5], line 15
+     10 mkdir(output_dir + '/' + set_name + '/OF_results/')
+     12 logging.info("Predicting \"%s\":" % (set_name))
+---> 15 main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
+     17 # ====== Load FineNet to verify
+     18 if isHavingFineNet == True:
 
-# Updated `enh_img_real` and `enh_img_imag` with explicit output shapes
-enh_img_real = Lambda(
-    reduce_sum, 
-    output_shape=compute_output_shape_reduce_sum, 
-    name='enh_img_real_2'
-)(mul_mask_real)
+File ~\Downloads\MinutiaeNet_Modified_Latest\CoarseNet\CoarseNet_model.py:248, in CoarseNetmodel(input_shape, weights_path, mode)
+    241     def compute_output_shape_reduce_sum(input_shape):
+    242         return input_shape[:-1]
+    244     enh_img_real = Lambda(
+    245     reduce_sum, 
+    246     output_shape=compute_output_shape_reduce_sum, 
+    247     name='enh_img_real_2'
+--> 248 )(mul_mask_real)
+    250     enh_img_imag = Lambda(
+    251     reduce_sum, 
+    252     output_shape=compute_output_shape_reduce_sum, 
+    253     name='enh_img_imag_2'
+    254 )(mul_mask_imag)
+    256     enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
 
-enh_img_imag = Lambda(
-    reduce_sum, 
-    output_shape=compute_output_shape_reduce_sum, 
-    name='enh_img_imag_2'
-)(mul_mask_imag)
-
-enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
+NameError: name 'mul_mask_real' is not defined
