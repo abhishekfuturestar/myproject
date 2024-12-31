@@ -1,21 +1,16 @@
-# Define output shape functions
-def compute_output_shape_reduce_sum(input_shape):
-    # Assuming reduce_sum reduces the last dimension (channel-wise summation)
-    return input_shape[:-1]
+ # Use this function to upsample image
+    upsample_ori = UpSampling2D(size=(8,8))(ori_peak)
+    seg_round = Activation('softsign')(seg_out)
 
-def compute_output_shape_merge_concat(input_shape):
-    # Assuming merge_concat concatenates along the channel axis
-    return input_shape[0][:-1] + (input_shape[0][-1] + input_shape[1][-1],)
 
-# Updated code with output_shape parameter for Lambda layers
-upsample_seg = UpSampling2D(size=(8, 8))(seg_round)
+    upsample_seg = UpSampling2D(size=(8,8))(seg_round)
+    mul_mask_real = Lambda(merge_mul)([filter_img_real, upsample_ori])
 
-mul_mask_real = Lambda(merge_mul)([filter_img_real, upsample_ori])
-enh_img_real = Lambda(reduce_sum, output_shape=compute_output_shape_reduce_sum, name='enh_img_real_2')(mul_mask_real)
+    enh_img_real = Lambda(reduce_sum, name='enh_img_real_2')(mul_mask_real)
+    mul_mask_imag = Lambda(merge_mul)([filter_img_imag, upsample_ori])
 
-mul_mask_imag = Lambda(merge_mul)([filter_img_imag, upsample_ori])
-enh_img_imag = Lambda(reduce_sum, output_shape=compute_output_shape_reduce_sum, name='enh_img_imag_2')(mul_mask_imag)
+    enh_img_imag = Lambda(reduce_sum, name='enh_img_imag_2')(mul_mask_imag)
+    enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
 
-enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
-
-enh_seg_img = Lambda(merge_concat, output_shape=compute_output_shape_merge_concat, name='phase_seg_img')([enh_img, upsample_seg])
+    enh_seg_img = Lambda(merge_concat, name='phase_seg_img')([enh_img, upsample_seg])
+    # ----------------------------------------------------------------------------
