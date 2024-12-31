@@ -3,3 +3,9 @@ def compute_output_shape(input_shape):
     return input_shape[:-1] + (1,)
 
 ori_peak = Lambda(ori_highest_peak, output_shape=compute_output_shape)(ori_out_1)
+
+
+
+
+    ori_peak = Lambda(ori_highest_peak)(ori_out_1)
+    ori_peak = Lambda(select_max)(ori_peak) # select max ori and set it to 1
