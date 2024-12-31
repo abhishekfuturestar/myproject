@@ -1,4 +1,42 @@
-def CoarseNetmodel(input_shape=(400,400,1), weights_path=None, mode='train'):
-    # Change network architecture here!!
-    img_input=Input(input_shape)
-    bn_img=Lambda(img_normalization, name='img_normalized')(img_input)
+NotImplementedError                       Traceback (most recent call last)
+Cell In[5], line 15
+     10 mkdir(output_dir + '/' + set_name + '/OF_results/')
+     12 logging.info("Predicting \"%s\":" % (set_name))
+---> 15 main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
+     17 # ====== Load FineNet to verify
+     18 if isHavingFineNet == True:
+
+File ~\Downloads\MinutiaeNet_Modified_Latest\CoarseNet\CoarseNet_model.py:75, in CoarseNetmodel(input_shape, weights_path, mode)
+     72 def CoarseNetmodel(input_shape=(400,400,1), weights_path=None, mode='train'):
+     73     # Change network architecture here!!
+     74     img_input=Input(input_shape)
+---> 75     bn_img=Lambda(img_normalization, name='img_normalized')(img_input)
+     77     # Main part
+     78     conv = conv_bn_prelu(bn_img, (64, 5, 5), '1_0')
+
+File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\utils\traceback_utils.py:122, in filter_traceback.<locals>.error_handler(*args, **kwargs)
+    119     filtered_tb = _process_traceback_frames(e.__traceback__)
+    120     # To get the full stack trace, call:
+    121     # `keras.config.disable_traceback_filtering()`
+--> 122     raise e.with_traceback(filtered_tb) from None
+    123 finally:
+    124     del filtered_tb
+
+File ~\AppData\Local\miniforge3\Lib\site-packages\keras\src\layers\core\lambda_layer.py:95, in Lambda.compute_output_shape(self, input_shape)
+     93         return tree.map_structure(lambda x: x.shape, output_spec)
+     94     except:
+---> 95         raise NotImplementedError(
+     96             "We could not automatically infer the shape of "
+     97             "the Lambda's output. Please specify the `output_shape` "
+     98             "argument for this Lambda layer."
+     99         )
+    101 if callable(self._output_shape):
+    102     return self._output_shape(input_shape)
+
+NotImplementedError: Exception encountered when calling Lambda.call().
+
+We could not automatically infer the shape of the Lambda's output. Please specify the `output_shape` argument for this Lambda layer.
+
+Arguments received by Lambda.call():
+  • args=('<KerasTensor shape=(None, None, None, 1), dtype=float32, sparse=False, name=keras_tensor_2>',)
+  • kwargs={'mask': 'None'}
