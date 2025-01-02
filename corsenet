@@ -1,53 +1,17 @@
-# Upsample the orientation map
-upsample_ori = UpSampling2D(size=(8, 8))(ori_peak)
+---------------------------------------------------------------------------
+IndexError                                Traceback (most recent call last)
+Cell In[5], line 5
+      2 set_name = deploy_set.split('/')[-2]
+      4 # Read image and GT
+----> 5 img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
+      7 mkdir(output_dir + '/'+ set_name + '/')
+      8 mkdir(output_dir + '/' + set_name + '/mnt_results/')
 
-# Apply activation to segment output
-seg_round = Activation('softsign')(seg_out)
+File ~\Pictures\vamsi\CoarseNet\CoarseNet_utils.py:381, in get_maximum_img_size_and_names(dataset, sample_rate, max_size)
+    378     img_name.extend(img_name_t.tolist()*rate)
+    379     folder_name.extend([folder]*img_name_t.shape[0]*rate)
+--> 381     img_size.append(np.array(imread(folder + 'img_files/' + img_name_t[0] + '.bmp', mode='L').shape))
+    383 img_name = np.asarray(img_name)
+    384 folder_name = np.asarray(folder_name)
 
-# Upsample the segmentation map
-upsample_seg = UpSampling2D(size=(8, 8))(seg_round)
-
-# Define a function for element-wise multiplication
-def merge_mul(inputs):
-    return inputs[0] * inputs[1]  # Element-wise multiplication
-
-# Element-wise multiplication for real components
-mul_mask_real = Lambda(merge_mul)([filter_img_real, upsample_ori])
-
-# Define a function for the reduce_sum Lambda layer
-def reduce_sum(inputs):
-    return tf.reduce_sum(inputs, axis=-1, keepdims=False)
-
-def compute_output_shape_reduce_sum(input_shape):
-    return input_shape[:-1]  # Reduce the last dimension
-
-# Sum the results of the real components
-enh_img_real = Lambda(
-    reduce_sum,
-    output_shape=compute_output_shape_reduce_sum,
-    name='enh_img_real_2'
-)(mul_mask_real)
-
-# Element-wise multiplication for imaginary components
-mul_mask_imag = Lambda(merge_mul)([filter_img_imag, upsample_ori])
-
-# Sum the results of the imaginary components
-enh_img_imag = Lambda(
-    reduce_sum,
-    output_shape=compute_output_shape_reduce_sum,
-    name='enh_img_imag_2'
-)(mul_mask_imag)
-
-# Define atan2 operation
-def atan2(inputs):
-    return tf.math.atan2(inputs[0], inputs[1])  # Compute phase angle
-
-# Compute the phase of the image
-enh_img = Lambda(atan2, name='phase_img')([enh_img_imag, enh_img_real])
-
-# Define a function for concatenation
-def merge_concat(inputs):
-    return tf.concat(inputs, axis=-1)  # Concatenate along the last axis
-
-# Concatenate the phase image with the upsampled segmentation map
-enh_seg_img = Lambda(merge_concat, name='phase_seg_img')([enh_img, upsample_seg])
+IndexError: index 0 is out of bounds for axis 0 with size 0
