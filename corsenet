@@ -11,7 +11,6 @@ logging = init_log(output_dir)
 # If use FineNet to refine, set into True
 isHavingFineNet = False
 
-
 for i, deploy_set in enumerate(inference_set):
     set_name = deploy_set.split('/')[-2]
 
@@ -22,9 +21,9 @@ for i, deploy_set in enumerate(inference_set):
     mkdir(output_dir + '/' + set_name + '/mnt_results/')
     mkdir(output_dir + '/'+ set_name + '/seg_results/')
     mkdir(output_dir + '/' + set_name + '/OF_results/')
+    mkdir(output_dir + '/' + set_name + '/enhance_img_results/')  # New directory to save enhanced images
 
     logging.info("Predicting \"%s\":" % (set_name))
-
 
     main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
 
@@ -39,7 +38,7 @@ for i, deploy_set in enumerate(inference_set):
                       metrics=['accuracy'])
 
     for i in range(0, len(img_name)):
-        
+
         logging.info("\"%s\" %d / %d: %s" % (set_name, i + 1, len(img_name), img_name[i]))
 
         image = imread(deploy_set + 'img_files/' + img_name[i] + '.bmp', mode='L')# / 255.0
@@ -53,11 +52,14 @@ for i, deploy_set in enumerate(inference_set):
         # Generate OF
         texture_img = FastEnhanceTexture(image, sigma=2.5, show=False)
         dir_map, fre_map = get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True)
-        
+
         image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
 
         enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out \
             = main_net_model.predict(image)
+
+        # Save the enhanced image (enhance_img) to the specified directory
+        plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img, cmap='gray')
 
         # Use for output mask
         round_seg = np.round(np.squeeze(seg_out))
@@ -73,8 +75,6 @@ for i, deploy_set in enumerate(inference_set):
         final_minutiae_score_threashold = 0.45
         early_minutiae_thres = final_minutiae_score_threashold + 0.05
 
-
-
         # In cases of small amount of minutiae given, try adaptive threshold
         while final_minutiae_score_threashold >= 0:
             mnt = label2mnt(np.squeeze(mnt_s_out) * np.round(np.squeeze(seg_out)), mnt_w_out, mnt_h_out, mnt_o_out,
@@ -88,7 +88,6 @@ for i, deploy_set in enumerate(inference_set):
             else:
                 final_minutiae_score_threashold = final_minutiae_score_threashold - 0.05
                 early_minutiae_thres = early_minutiae_thres - 0.05
-
 
         mnt_nms = fuse_nms(mnt_nms_1, mnt_nms_2)
 
@@ -116,17 +115,9 @@ for i, deploy_set in enumerate(inference_set):
                         patch_minu = ret
                         patch_minu = np.expand_dims(patch_minu, axis=0)
 
-                        # # Can use class as hard decision
-                        # # 0: minu  1: non-minu
-                        # [class_Minutiae] = np.argmax(model_FineNet.predict(patch_minu), axis=1)
-                        #
-                        # if class_Minutiae == 0:
-                        #     mnt_refined.append(mnt_nms[idx_minu,:])
-
                         # Use soft decision: merge FineNet score with CoarseNet score
                         [isMinutiaeProb] = model_FineNet.predict(patch_minu)
                         isMinutiaeProb = isMinutiaeProb[0]
-                        # print isMinutiaeProb
                         tmp_mnt = mnt_nms[idx_minu, :].copy()
                         tmp_mnt[3] = (4*tmp_mnt[3] + isMinutiaeProb) / 5
                         mnt_refined.append(tmp_mnt)
@@ -141,7 +132,7 @@ for i, deploy_set in enumerate(inference_set):
 
         if mnt_nms.shape[0] > 0:
             mnt_nms = mnt_nms[mnt_nms[:, 3] > final_minutiae_score_threashold, :]
-        
+
         final_mask = ndimage.zoom(np.round(np.squeeze(seg_out)), [8, 8], order=0)
         # Show the orientation
         show_orientation_field(original_image, dir_map + np.pi, mask=final_mask, fname="%s/%s/OF_results/%s_OF.jpg" % (output_dir, set_name, img_name[i]))
@@ -150,7 +141,6 @@ for i, deploy_set in enumerate(inference_set):
 
         time_afterpost = time()
         mnt_writer(mnt_nms, img_name[i], img_size, "%s/%s/mnt_results/%s.mnt"%(output_dir, set_name, img_name[i]))
-        draw_minutiae(original_image, mnt_nms, "%s/%s/%s_minu.jpg"%(output_dir, set_name, img_name[i]),saveimage=True)
+        draw_minutiae(original_image, mnt_nms, "%s/%s/%s_minu.jpg"%(output_dir, set_name, img_name[i]), saveimage=True)
 
-        
         plt.imsave("%s/%s/seg_results/%s_seg.jpg" % (output_dir, set_name, img_name[i]), final_mask, cmap='gray')
