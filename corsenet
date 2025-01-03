@@ -1,86 +1,21 @@
-import os
-import numpy as np
-from datetime import datetime
-import cv2
-from scipy import ndimage
-from scipy import misc
-from keras.optimizers import Adam
+AttributeError                            Traceback (most recent call last)
+Cell In[6], line 53
+     51 # Read and preprocess the image
+     52 image_path = os.path.join(deploy_set, 'img_files', f'{image_name}.bmp')
+---> 53 image = misc.imread(image_path, mode='L')
+     54 img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
+     55 image = image[:img_size[0], :img_size[1]]
 
-# Initialize output directory
-output_dir = '../output_CoarseNet/' + datetime.now().strftime('%Y%m%d-%H%M%S')
-os.makedirs(output_dir, exist_ok=True)
+File ~\AppData\Local\Programs\Python\Python311\Lib\site-packages\scipy\misc\__init__.py:45, in __getattr__(name)
+     43 def __getattr__(name):
+     44     if name not in __all__:
+---> 45         raise AttributeError(
+     46             "scipy.misc is deprecated and has no attribute "
+     47             f"{name}.")
+     49     if name in dataset_methods:
+     50         msg = ("The module `scipy.misc` is deprecated and will be "
+     51                "completely removed in SciPy v2.0.0. "
+     52                f"All dataset methods including {name}, must be imported "
+     53                "directly from the new `scipy.datasets` module.")
 
-# Function to create directories
-def mkdir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-# Function to save enhanced images
-def save_enhanced_images(enhanced_images, output_dir, file_prefix="enhanced"):
-    for idx, img in enumerate(enhanced_images):
-        img = (img - np.min(img)) / (np.max(img) - np.min(img))  # Normalize to [0, 1]
-        img = (img * 255).astype(np.uint8)  # Scale to [0, 255]
-        filename = os.path.join(output_dir, f"{file_prefix}_{idx}.png")
-        cv2.imwrite(filename, img)
-        print(f"Saved enhanced image: {filename}")
-
-# Inference settings
-inference_set = ['../Dataset/CoarseNet_test/']
-CoarseNet_path = '../Models/CoarseNet.h5'
-FineNet_path = '../Models/FineNet.h5'
-
-# Process each inference set
-for deploy_set in inference_set:
-    set_name = deploy_set.split('/')[-2]
-
-    # Create required directories
-    mkdir(output_dir + '/' + set_name + '/')
-    mkdir(output_dir + '/' + set_name + '/mnt_results/')
-    mkdir(output_dir + '/' + set_name + '/seg_results/')
-    mkdir(output_dir + '/' + set_name + '/OF_results/')
-
-    print(f"Processing set: {set_name}")
-
-    # Load CoarseNet model
-    main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
-
-    # Load FineNet model if required
-    isHavingFineNet = True
-    if isHavingFineNet:
-        model_FineNet = FineNetmodel(num_classes=2, pretrained_path=FineNet_path, input_shape=(224, 224, 3))
-        model_FineNet.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0), metrics=['accuracy'])
-
-    # Get images from the dataset
-    img_name, _, _ = get_maximum_img_size_and_names(deploy_set)
-
-    for i, image_name in enumerate(img_name):
-        print(f"Processing image {i + 1}/{len(img_name)}: {image_name}")
-
-        # Read and preprocess the image
-        image_path = os.path.join(deploy_set, 'img_files', f'{image_name}.bmp')
-        image = misc.imread(image_path, mode='L')
-        img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
-        image = image[:img_size[0], :img_size[1]]
-        original_image = image.copy()
-
-        # Enhance image
-        image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
-        enh_img, _, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = main_net_model.predict(image)
-
-        # Save enhanced image
-        enhance_img_path = os.path.join(output_dir, set_name, f"{image_name}_enhanced.png")
-        save_enhanced_images([enhance_img], os.path.join(output_dir, set_name), file_prefix=f"{image_name}_enhanced")
-
-        # Post-process segmentation output
-        round_seg = np.round(np.squeeze(seg_out))
-        seg_out = 1 - round_seg
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10))
-        seg_out = cv2.morphologyEx(seg_out, cv2.MORPH_CLOSE, kernel)
-        seg_out = cv2.dilate(seg_out, kernel)
-
-        # Save segmentation results
-        final_mask = ndimage.zoom(np.round(np.squeeze(seg_out)), [8, 8], order=0)
-        seg_result_path = os.path.join(output_dir, set_name, 'seg_results', f"{image_name}_seg.jpg")
-        misc.imsave(seg_result_path, final_mask)
-
-        print(f"Segmentation saved: {seg_result_path}")
+AttributeError: scipy.misc is deprecated and has no attribute imread.
