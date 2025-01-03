@@ -193,4 +193,17 @@ for i, deploy_set in enumerate(inference_set):
                         [isMinutiaeProb] = model_FineNet.predict(patch_minu)
                         isMinutiaeProb = isMinutiaeProb[0]
                         tmp_mnt = mnt_nms[idx_minu, :].copy()
-                        tmp_mnt[3] = (4 *
+                        tmp_mnt[3] = (4 * tmp_mnt[3] + 1 * isMinutiaeProb) / 5
+                        mnt_refined.append(tmp_mnt)
+
+                    except:
+                        continue
+                mnt_nms = np.array(mnt_refined)
+
+        mnt_writer(mnt_nms, img_name[i], img_size, output_dir + '/' + set_name + '/mnt_results/')
+
+        # Visualize and draw minutiae
+        draw_minutiae(original_image, mnt_nms, img_name[i], saveimage=True)
+        show_orientation_field(original_image, dir_map, seg_out, fname=f"{output_dir}/{set_name}/OF_results/{img_name[i]}_OF.jpg")
+
+    logging.info("Finished processing %s" % (set_name))
