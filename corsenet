@@ -1,3 +1,15 @@
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+from scipy import ndimage
+from time import time
+from datetime import datetime
+from skimage.io import imread
+from keras.models import load_model
+
+# Assuming other necessary imports are already present
+# And other functions like init_log, get_maximum_img_size_and_names, FastEnhanceTexture, etc., are defined elsewhere.
+
 inference_set = ['../Dataset/prints_to_test_25/',]
 
 CoarseNet_path = '../Models/CoarseNet.h5'
@@ -21,7 +33,7 @@ for i, deploy_set in enumerate(inference_set):
     mkdir(output_dir + '/' + set_name + '/mnt_results/')
     mkdir(output_dir + '/'+ set_name + '/seg_results/')
     mkdir(output_dir + '/' + set_name + '/OF_results/')
-    mkdir(output_dir + '/' + set_name + '/enhance_img_results/')  # New directory to save enhanced images
+    mkdir(output_dir + '/' + set_name + '/enhance_img_results/')
 
     logging.info("Predicting \"%s\":" % (set_name))
 
@@ -38,10 +50,10 @@ for i, deploy_set in enumerate(inference_set):
                       metrics=['accuracy'])
 
     for i in range(0, len(img_name)):
-
+        
         logging.info("\"%s\" %d / %d: %s" % (set_name, i + 1, len(img_name), img_name[i]))
 
-        image = imread(deploy_set + 'img_files/' + img_name[i] + '.bmp', mode='L')# / 255.0
+        image = imread(deploy_set + 'img_files/' + img_name[i] + '.bmp', mode='L')  # / 255.0
 
         img_size = image.shape
         img_size = np.array(img_size, dtype=np.int32) // 8 * 8
@@ -52,13 +64,25 @@ for i, deploy_set in enumerate(inference_set):
         # Generate OF
         texture_img = FastEnhanceTexture(image, sigma=2.5, show=False)
         dir_map, fre_map = get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True)
-
+        
         image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
 
-        enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out \
-            = main_net_model.predict(image)
+        enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = \
+            main_net_model.predict(image)
 
-        # Save the enhanced image (enhance_img) to the specified directory
+        # Check the shape and values of enhance_img for debugging
+        print(f"Shape of enhance_img: {enhance_img.shape}")
+        print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
+
+        # Normalize the enhance_img to proper image scale [0, 255]
+        enhance_img = np.clip(enhance_img, 0, 1)  # Ensure values are in the range [0, 1]
+        enhance_img = (enhance_img * 255).astype(np.uint8)  # Convert to 8-bit integers
+
+        # Optionally, visualize the image for debugging
+        # plt.imshow(enhance_img, cmap='gray')
+        # plt.show()
+
+        # Save the enhanced image
         plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img, cmap='gray')
 
         # Use for output mask
@@ -119,7 +143,7 @@ for i, deploy_set in enumerate(inference_set):
                         [isMinutiaeProb] = model_FineNet.predict(patch_minu)
                         isMinutiaeProb = isMinutiaeProb[0]
                         tmp_mnt = mnt_nms[idx_minu, :].copy()
-                        tmp_mnt[3] = (4*tmp_mnt[3] + isMinutiaeProb) / 5
+                        tmp_mnt[3] = (4 * tmp_mnt[3] + isMinutiaeProb) / 5
                         mnt_refined.append(tmp_mnt)
 
                     except:
@@ -140,7 +164,7 @@ for i, deploy_set in enumerate(inference_set):
         fuse_minu_orientation(dir_map, mnt_nms, mode=3)
 
         time_afterpost = time()
-        mnt_writer(mnt_nms, img_name[i], img_size, "%s/%s/mnt_results/%s.mnt"%(output_dir, set_name, img_name[i]))
-        draw_minutiae(original_image, mnt_nms, "%s/%s/%s_minu.jpg"%(output_dir, set_name, img_name[i]), saveimage=True)
+        mnt_writer(mnt_nms, img_name[i], img_size, "%s/%s/mnt_results/%s.mnt" % (output_dir, set_name, img_name[i]))
+        draw_minutiae(original_image, mnt_nms, "%s/%s/%s_minu.jpg" % (output_dir, set_name, img_name[i]), saveimage=True)
 
-        plt.imsave("%s/%s/seg_results/%s_seg.jpg" % (output_dir, set_name, img_name[i]), final_mask, cmap='gray')
+        plt.imsave("%s/%s/seg_results/%s_seg.jpg" % (output_dir, set
