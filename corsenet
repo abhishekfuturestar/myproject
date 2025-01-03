@@ -1,20 +1,73 @@
-# import numpy as np
-# import cv2
-# import matplotlib.pyplot as plt
-# from scipy import ndimage
-# from time import time
-# from datetime import datetime
-# from skimage.io import imread
-# from keras.models import load_model
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+from scipy import ndimage
+from time import time
+from datetime import datetime
+from skimage.io import imread
+from keras.models import load_model
 
+# Define necessary functions
+def mkdir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
+def init_log(output_dir):
+    # Implement logging initialization here
+    pass
 
+def get_maximum_img_size_and_names(deploy_set):
+    # Implement your image size and name retrieval logic
+    return img_name, folder_name, img_size
+
+def FastEnhanceTexture(image, sigma=2.5, show=False):
+    # Your texture enhancement function
+    return texture_img
+
+def get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True):
+    # Your function to get the maps
+    return dir_map, fre_map
+
+def CoarseNetmodel(input_shape, model_path, mode='deploy'):
+    # Your CoarseNet model loading function
+    return model
+
+def FineNetmodel(num_classes, pretrained_path, input_shape):
+    # Your FineNet model loading function
+    return model
+
+def py_cpu_nms(mnt, threshold):
+    # Your NMS function
+    return mnt_nms
+
+def nms(mnt):
+    # Your NMS function
+    return mnt_nms
+
+def fuse_nms(mnt_nms_1, mnt_nms_2):
+    # Your fusion function
+    return mnt_nms
+
+def label2mnt(mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh):
+    # Your minutiae extraction function
+    return mnt
+
+def show_orientation_field(original_image, dir_map, mask, fname):
+    # Your orientation field visualization function
+    pass
+
+def draw_minutiae(original_image, mnt_nms, fname, saveimage=True):
+    # Your minutiae drawing function
+    pass
+
+def mnt_writer(mnt_nms, img_name, img_size, output_path):
+    # Your minutiae writing function
+    pass
+
+# Main code
 inference_set = ['../Dataset/prints_to_test_25/',]
-
 CoarseNet_path = '../Models/CoarseNet.h5'
-
-output_dir = '../output_CoarseNet_25/'+datetime.now().strftime('%Y%m%d-%H%M%S')
-
+output_dir = '../output_CoarseNet_25/' + datetime.now().strftime('%Y%m%d-%H%M%S')
 FineNet_path = '../Models/FineNet.h5'
 
 logging = init_log(output_dir)
@@ -28,9 +81,9 @@ for i, deploy_set in enumerate(inference_set):
     # Read image and GT
     img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
 
-    mkdir(output_dir + '/'+ set_name + '/')
+    mkdir(output_dir + '/' + set_name + '/')
     mkdir(output_dir + '/' + set_name + '/mnt_results/')
-    mkdir(output_dir + '/'+ set_name + '/seg_results/')
+    mkdir(output_dir + '/' + set_name + '/seg_results/')
     mkdir(output_dir + '/' + set_name + '/OF_results/')
     mkdir(output_dir + '/' + set_name + '/enhance_img_results/')
 
@@ -38,18 +91,16 @@ for i, deploy_set in enumerate(inference_set):
 
     main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
 
-    # ====== Load FineNet to verify
+    # Load FineNet to verify (if required)
     if isHavingFineNet == True:
         model_FineNet = FineNetmodel(num_classes=2,
-                             pretrained_path=FineNet_path,
-                             input_shape=(224,224,3))
-
+                                     pretrained_path=FineNet_path,
+                                     input_shape=(224, 224, 3))
         model_FineNet.compile(loss='categorical_crossentropy',
-                      optimizer=Adam(lr=0),
-                      metrics=['accuracy'])
+                              optimizer='adam',
+                              metrics=['accuracy'])
 
     for i in range(0, len(img_name)):
-        
         logging.info("\"%s\" %d / %d: %s" % (set_name, i + 1, len(img_name), img_name[i]))
 
         image = imread(deploy_set + 'img_files/' + img_name[i] + '.bmp', mode='L')  # / 255.0
@@ -63,7 +114,7 @@ for i, deploy_set in enumerate(inference_set):
         # Generate OF
         texture_img = FastEnhanceTexture(image, sigma=2.5, show=False)
         dir_map, fre_map = get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True)
-        
+
         image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
 
         enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = \
@@ -142,28 +193,4 @@ for i, deploy_set in enumerate(inference_set):
                         [isMinutiaeProb] = model_FineNet.predict(patch_minu)
                         isMinutiaeProb = isMinutiaeProb[0]
                         tmp_mnt = mnt_nms[idx_minu, :].copy()
-                        tmp_mnt[3] = (4 * tmp_mnt[3] + isMinutiaeProb) / 5
-                        mnt_refined.append(tmp_mnt)
-
-                    except:
-                        mnt_refined.append(mnt_nms[idx_minu, :])
-        else:
-            mnt_refined = mnt_nms
-
-        mnt_nms_backup = mnt_nms.copy()
-        mnt_nms = np.array(mnt_refined)
-
-        if mnt_nms.shape[0] > 0:
-            mnt_nms = mnt_nms[mnt_nms[:, 3] > final_minutiae_score_threashold, :]
-
-        final_mask = ndimage.zoom(np.round(np.squeeze(seg_out)), [8, 8], order=0)
-        # Show the orientation
-        show_orientation_field(original_image, dir_map + np.pi, mask=final_mask, fname="%s/%s/OF_results/%s_OF.jpg" % (output_dir, set_name, img_name[i]))
-
-        fuse_minu_orientation(dir_map, mnt_nms, mode=3)
-
-        time_afterpost = time()
-        mnt_writer(mnt_nms, img_name[i], img_size, "%s/%s/mnt_results/%s.mnt" % (output_dir, set_name, img_name[i]))
-        draw_minutiae(original_image, mnt_nms, "%s/%s/%s_minu.jpg" % (output_dir, set_name, img_name[i]), saveimage=True)
-
-        plt.imsave("%s/%s/seg_results/%s_seg.jpg" % (output_dir, set_name, img_name[i]), final_mask, cmap='gray')
+                        tmp_mnt[3] = (4 *
