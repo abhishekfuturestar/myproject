@@ -1,6 +1,5 @@
 
- am sending the whole code that is given by you its running correctly but in enahnce_img not showing showing blank , but when i run it its shoiwng  shape of enhance_img is :[1,512,512,1]  here is the code:  # import numpy as np
-# import cv2
+ # import cv2
 # import matplotlib.pyplot as plt
 # from scipy import ndimage
 # from time import time
@@ -168,6 +167,3 @@ for i, deploy_set in enumerate(inference_set):
         draw_minutiae(original_image, mnt_nms, "%s/%s/%s_minu.jpg" % (output_dir, set_name, img_name[i]), saveimage=True)
 
         plt.imsave("%s/%s/seg_results/%s_seg.jpg" % (output_dir, set_name, img_name[i]), final_mask, cmap='gray')
-ChatGPT said:
-ChatGPT
-It seems like you're having trouble displaying or saving the enhance_img correctly despite it having a shape of [1, 512, 512, 1], which indicates it's a 4D tensor (batch size, height, width, channels). Here are some potential reasons and fixes for the issue where enhance_img appears blank:
