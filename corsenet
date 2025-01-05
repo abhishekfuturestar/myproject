@@ -1,20 +1,128 @@
-# Check the shape and values of enhance_img for debugging
-print(f"Shape of enhance_img: {enhance_img.shape}")
-print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
+import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+from datetime import datetime
+from scipy import ndimage
+from some_module import (
+    get_maximum_img_size_and_names,
+    mkdir,
+    CoarseNetmodel,
+    FineNetmodel,
+    FastEnhanceTexture,
+    get_maps_STFT,
+    label2mnt,
+    py_cpu_nms,
+    nms,
+    fuse_nms,
+    mnt_writer,
+    draw_minutiae,
+    show_orientation_field,
+    fuse_minu_orientation,
+    init_log
+)
 
-# Normalize the enhance_img to proper image scale [0, 255]
-min_val = np.min(enhance_img)
-max_val = np.max(enhance_img)
+# Paths and configurations
+inference_set = ['../Dataset/prints_to_test_25/']
+CoarseNet_path = '../Models/CoarseNet.h5'
+FineNet_path = '../Models/FineNet.h5'
+output_dir = '../output_CoarseNet_25/' + datetime.now().strftime('%Y%m%d-%H%M%S')
+isHavingFineNet = False
 
-if max_val - min_val > 0:  # Avoid division by zero
-    enhance_img = (enhance_img - min_val) / (max_val - min_val)  # Normalize to [0, 1]
-else:
-    print("Warning: enhance_img has zero variance; setting to zeros.")
-    enhance_img = np.zeros_like(enhance_img)  # Handle edge case where all values are the same
+# Initialize logging
+logging = init_log(output_dir)
 
-enhance_img = (enhance_img * 255).astype(np.uint8)  # Scale to [0, 255] and convert to 8-bit integers
+for deploy_set in inference_set:
+    set_name = deploy_set.split('/')[-2]
+    img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
 
-# Save the enhanced image
-enhance_img_output_path = f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg"
-plt.imsave(enhance_img_output_path, np.squeeze(enhance_img), cmap='gray')
-print(f"Enhanced image saved to {enhance_img_output_path}")
+    # Create output directories
+    mkdir(output_dir + '/' + set_name + '/')
+    mkdir(output_dir + '/' + set_name + '/mnt_results/')
+    mkdir(output_dir + '/' + set_name + '/seg_results/')
+    mkdir(output_dir + '/' + set_name + '/OF_results/')
+    mkdir(output_dir + '/' + set_name + '/enhance_img_results/')
+
+    logging.info(f"Processing dataset: {set_name}")
+    main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
+
+    # Load FineNet if required
+    if isHavingFineNet:
+        model_FineNet = FineNetmodel(
+            num_classes=2,
+            pretrained_path=FineNet_path,
+            input_shape=(224, 224, 3)
+        )
+        model_FineNet.compile(
+            loss='categorical_crossentropy',
+            optimizer='adam',
+            metrics=['accuracy']
+        )
+
+    for idx, name in enumerate(img_name):
+        logging.info(f"Processing image {idx + 1}/{len(img_name)}: {name}")
+        image_path = deploy_set + 'img_files/' + name + '.bmp'
+        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+        img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
+        image = image[:img_size[0], :img_size[1]]
+        original_image = image.copy()
+
+        # Enhance texture and compute orientation field
+        texture_img = FastEnhanceTexture(image, sigma=2.5, show=False)
+        dir_map, fre_map = get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True)
+
+        # Prepare for model input
+        image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
+        model_outputs = main_net_model.predict(image)
+
+        # Extract and process enhance_img
+        enhance_img = model_outputs[2]
+        enhance_img = np.squeeze(enhance_img)
+        enhance_img = (enhance_img - np.min(enhance_img)) / (np.max(enhance_img) - np.min(enhance_img)) * 255
+        enhance_img = enhance_img.astype(np.uint8)
+        enhance_img_output_path = f"{output_dir}/{set_name}/enhance_img_results/{name}_enhance_img.jpg"
+        plt.imsave(enhance_img_output_path, enhance_img, cmap='gray')
+
+        # Process segmentation
+        seg_out = model_outputs[5]
+        seg_out = 1 - np.round(np.squeeze(seg_out))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10))
+        seg_out = cv2.morphologyEx(seg_out, cv2.MORPH_CLOSE, kernel)
+        seg_out = cv2.morphologyEx(seg_out, cv2.MORPH_OPEN, kernel)
+        seg_out = cv2.dilate(seg_out, kernel)
+
+        # Minutiae detection
+        mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = model_outputs[6:10]
+        final_minutiae_score_threshold = 0.45
+        mnt = label2mnt(
+            np.squeeze(mnt_s_out) * np.round(seg_out),
+            mnt_w_out, mnt_h_out, mnt_o_out,
+            thresh=final_minutiae_score_threshold
+        )
+        mnt_nms_1 = py_cpu_nms(mnt, 0.5)
+        mnt_nms_2 = nms(mnt)
+        mnt_nms = fuse_nms(mnt_nms_1, mnt_nms_2)
+
+        # Optional FineNet refinement
+        if isHavingFineNet:
+            mnt_refined = []
+            for minu in mnt_nms:
+                x, y = int(minu[1]), int(minu[0])
+                patch = original_image[x - 22:x + 22, y - 22:y + 22]
+                patch = cv2.resize(patch, (224, 224))
+                patch = np.stack([patch] * 3, axis=-1)[None, ...]
+                is_minutiae_prob = model_FineNet.predict(patch)
+                minu[3] = (4 * minu[3] + is_minutiae_prob[0]) / 5
+                mnt_refined.append(minu)
+            mnt_nms = np.array(mnt_refined)
+
+        # Save minutiae and orientation field
+        final_mask = ndimage.zoom(np.round(seg_out), [8, 8], order=0)
+        show_orientation_field(original_image, dir_map + np.pi, mask=final_mask,
+                               fname=f"{output_dir}/{set_name}/OF_results/{name}_OF.jpg")
+        mnt_writer(mnt_nms, name, img_size, f"{output_dir}/{set_name}/mnt_results/{name}.mnt")
+        draw_minutiae(original_image, mnt_nms, f"{output_dir}/{set_name}/{name}_minu.jpg", saveimage=True)
+
+        # Save segmentation
+        seg_output_path = f"{output_dir}/{set_name}/seg_results/{name}_seg.jpg"
+        plt.imsave(seg_output_path, final_mask, cmap='gray')
