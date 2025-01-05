@@ -1,112 +1,20 @@
-import os
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime
-from skimage.io import imread
-from keras.models import load_model
-from scipy import ndimage
-from time import time
-from keras.optimizers import Adam
+# Check the shape and values of enhance_img for debugging
+print(f"Shape of enhance_img: {enhance_img.shape}")
+print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
 
-# Assuming these functions exist
-# Add imports or definitions for missing methods if necessary
-# init_log, mkdir, get_maximum_img_size_and_names, CoarseNetmodel, FineNetmodel,
-# FastEnhanceTexture, get_maps_STFT, label2mnt, py_cpu_nms, nms, fuse_nms,
-# show_orientation_field, fuse_minu_orientation, mnt_writer, draw_minutiae
+# Normalize the enhance_img to proper image scale [0, 255]
+min_val = np.min(enhance_img)
+max_val = np.max(enhance_img)
 
-# Paths
-inference_set = ['../Dataset/prints_to_test_25/']
-CoarseNet_path = '../Models/CoarseNet.h5'
-FineNet_path = '../Models/FineNet.h5'
-output_dir = '../output_CoarseNet_25/' + datetime.now().strftime('%Y%m%d-%H%M%S')
+if max_val - min_val > 0:  # Avoid division by zero
+    enhance_img = (enhance_img - min_val) / (max_val - min_val)  # Normalize to [0, 1]
+else:
+    print("Warning: enhance_img has zero variance; setting to zeros.")
+    enhance_img = np.zeros_like(enhance_img)  # Handle edge case where all values are the same
 
-# Logging setup
-logging = init_log(output_dir)
+enhance_img = (enhance_img * 255).astype(np.uint8)  # Scale to [0, 255] and convert to 8-bit integers
 
-# Configurations
-isHavingFineNet = False
-
-# Iterate over inference datasets
-for deploy_set in inference_set:
-    set_name = deploy_set.split('/')[-2]
-
-    # Get image names and sizes
-    img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
-
-    # Create necessary output directories
-    mkdir(f"{output_dir}/{set_name}/")
-    mkdir(f"{output_dir}/{set_name}/mnt_results/")
-    mkdir(f"{output_dir}/{set_name}/seg_results/")
-    mkdir(f"{output_dir}/{set_name}/OF_results/")
-    mkdir(f"{output_dir}/{set_name}/enhance_img_results/")
-
-    logging.info(f"Predicting \"{set_name}\":")
-
-    # Load CoarseNet model
-    main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
-
-    # Load FineNet model (if applicable)
-    if isHavingFineNet:
-        model_FineNet = FineNetmodel(
-            num_classes=2,
-            pretrained_path=FineNet_path,
-            input_shape=(224, 224, 3)
-        )
-        model_FineNet.compile(loss='categorical_crossentropy',
-                              optimizer=Adam(lr=0),
-                              metrics=['accuracy'])
-
-    # Iterate over images in the set
-    for i, name in enumerate(img_name):
-        logging.info(f"\"{set_name}\" {i + 1}/{len(img_name)}: {name}")
-
-        # Read and preprocess the image
-        image = imread(f"{deploy_set}/img_files/{name}.bmp", as_gray=True)
-        img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
-        image = image[:img_size[0], :img_size[1]]
-        original_image = image.copy()
-
-        # Enhance texture and get STFT maps
-        texture_img = FastEnhanceTexture(image, sigma=2.5, show=False)
-        dir_map, fre_map = get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True)
-        image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
-
-        # Predict using CoarseNet
-        outputs = main_net_model.predict(image)
-        (enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2,
-         seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out) = outputs
-
-        # Debugging enhanced image
-        print(f"Shape of enhance_img: {enhance_img.shape}")
-        print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
-
-        # Normalize the enhance_img
-        enhance_img = np.squeeze(enhance_img)
-        enhance_img = np.clip(enhance_img, 0, 1)  # Ensure range [0, 1]
-        enhance_img = (enhance_img * 255).astype(np.uint8)  # Scale to [0, 255]
-
-        # Save the enhanced image
-        enhance_img_path = f"{output_dir}/{set_name}/enhance_img_results/{name}_enhance_img.jpg"
-        plt.imsave(enhance_img_path, enhance_img, cmap='gray')
-        print(f"Enhanced image saved at: {enhance_img_path}")
-
-        # Process segmentation mask
-        seg_out = np.round(np.squeeze(seg_out))
-        seg_out = 1 - seg_out
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10))
-        seg_out = cv2.morphologyEx(seg_out, cv2.MORPH_CLOSE, kernel)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-        seg_out = cv2.morphologyEx(seg_out, cv2.MORPH_OPEN, kernel)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        seg_out = cv2.dilate(seg_out, kernel)
-
-        # Save the segmentation result
-        final_mask = ndimage.zoom(np.round(seg_out), [8, 8], order=0)
-        seg_path = f"{output_dir}/{set_name}/seg_results/{name}_seg.jpg"
-        plt.imsave(seg_path, final_mask, cmap='gray')
-        print(f"Segmentation result saved at: {seg_path}")
-
-        # Other operations: OF visualization, minutiae processing, etc.
-        show_orientation_field(original_image, dir_map + np.pi, mask=final_mask,
-                               fname=f"{output_dir}/{set_name}/OF_results/{name}_OF.jpg")
+# Save the enhanced image
+enhance_img_output_path = f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg"
+plt.imsave(enhance_img_output_path, np.squeeze(enhance_img), cmap='gray')
+print(f"Enhanced image saved to {enhance_img_output_path}")
