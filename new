@@ -1,107 +1,12 @@
-updateddddddddddd.............
+# Check shape and value range of enhance_img for debugging
+print(f"Shape of enhance_img: {enhance_img.shape}")
+print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
 
-inference_set = ['../Dataset/prints_to_test_25/']
+# Normalize enhance_img to the range [0, 1]
+enhance_img = (enhance_img - np.min(enhance_img)) / (np.max(enhance_img) - np.min(enhance_img) + 1e-8)
 
-CoarseNet_path = '../Models/CoarseNet.h5'
-output_dir = '../output_CoarseNet_25/' + datetime.now().strftime('%Y%m%d-%H%M%S')
-FineNet_path = '../Models/FineNet.h5'
-logging = init_log(output_dir)
+# Scale to [0, 255] and convert to uint8
+enhance_img = (enhance_img * 255).astype(np.uint8)
 
-# If use FineNet to refine, set into True
-isHavingFineNet = False
-
-for deploy_set in inference_set:
-    set_name = deploy_set.split('/')[-2]
-
-    # Read image and GT
-    img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
-
-    # Create required directories
-    mkdir(output_dir + f'/{set_name}/')
-    mkdir(output_dir + f'/{set_name}/mnt_results/')
-    mkdir(output_dir + f'/{set_name}/seg_results/')
-    mkdir(output_dir + f'/{set_name}/OF_results/')
-    mkdir(output_dir + f'/{set_name}/enhance_img_results/')
-
-    logging.info(f"Predicting \"{set_name}\":")
-
-    # Load CoarseNet model
-    main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
-
-    # Load FineNet if required
-    if isHavingFineNet:
-        model_FineNet = FineNetmodel(num_classes=2, pretrained_path=FineNet_path, input_shape=(224, 224, 3))
-        model_FineNet.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0), metrics=['accuracy'])
-
-    for i, img in enumerate(img_name):
-        logging.info(f"\"{set_name}\" {i + 1} / {len(img_name)}: {img}")
-
-        # Read the image
-        image = imread(f"{deploy_set}/img_files/{img}.bmp", mode='L')
-        img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
-        image = image[:img_size[0], :img_size[1]]
-        original_image = image.copy()
-
-        # Generate texture and maps
-        texture_img = FastEnhanceTexture(image, sigma=2.5, show=False)
-        dir_map, fre_map = get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True)
-        image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
-
-        # Predict using CoarseNet
-        outputs = main_net_model.predict(image)
-        enh_img, _, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = outputs
-
-        # Debug enhance_img
-        print(f"Shape of enhance_img: {enhance_img.shape}")
-        print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
-
-        # Normalize enhance_img for saving
-        enhance_img = np.clip(enhance_img, 0, 1) * 255
-        enhance_img = enhance_img.astype(np.uint8)
-
-        # Save the enhanced image
-        plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img}_enhance_img.jpg", enhance_img, cmap='gray')
-
-        # Process segmentation output
-        round_seg = np.round(np.squeeze(seg_out))
-        seg_out = 1 - round_seg
-        kernel_sizes = [10, 7, 5]
-        for ksize in kernel_sizes:
-            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (ksize, ksize))
-            seg_out = cv2.morphologyEx(seg_out, cv2.MORPH_CLOSE if ksize == 10 else cv2.MORPH_OPEN, kernel)
-        seg_out = cv2.dilate(seg_out, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
-
-        # Adaptive thresholding for minutiae
-        final_threshold, early_threshold = 0.45, 0.5
-        while final_threshold >= 0:
-            mnt = label2mnt(np.squeeze(mnt_s_out) * np.round(np.squeeze(seg_out)), mnt_w_out, mnt_h_out, mnt_o_out, thresh=early_threshold)
-            mnt_nms_1, mnt_nms_2 = py_cpu_nms(mnt, 0.5), nms(mnt)
-            if mnt_nms_1.shape[0] > 4 and mnt_nms_2.shape[0] > 4:
-                break
-            final_threshold -= 0.05
-            early_threshold -= 0.05
-
-        # Refine minutiae
-        mnt_nms = fuse_nms(mnt_nms_1, mnt_nms_2)
-        if isHavingFineNet:
-            mnt_refined = []
-            for minutiae in mnt_nms:
-                try:
-                    x, y = int(minutiae[1]), int(minutiae[0])
-                    patch = original_image[x - 22:x + 22, y - 22:y + 22]
-                    patch = cv2.resize(patch, (224, 224), interpolation=cv2.INTER_NEAREST)
-                    patch = np.stack([patch] * 3, axis=-1)[None]
-                    is_minutiae_prob = model_FineNet.predict(patch)[0][0]
-                    minutiae[3] = (4 * minutiae[3] + is_minutiae_prob) / 5
-                    mnt_refined.append(minutiae)
-                except:
-                    mnt_refined.append(minutiae)
-            mnt_nms = np.array(mnt_refined)
-
-        # Post-processing
-        final_mask = ndimage.zoom(np.round(np.squeeze(seg_out)), [8, 8], order=0)
-        show_orientation_field(original_image, dir_map + np.pi, mask=final_mask, fname=f"{output_dir}/{set_name}/OF_results/{img}_OF.jpg")
-        fuse_minu_orientation(dir_map, mnt_nms, mode=3)
-        mnt_writer(mnt_nms, img, img_size, f"{output_dir}/{set_name}/mnt_results/{img}.mnt")
-        draw_minutiae(original_image, mnt_nms, f"{output_dir}/{set_name}/{img}_minu.jpg", saveimage=True)
-        plt.imsave(f"{output_dir}/{set_name}/seg_results/{img}_seg.jpg", final_mask, cmap='gray')
+# Save the enhanced image
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img.squeeze(), cmap='gray')
