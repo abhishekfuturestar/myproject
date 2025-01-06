@@ -1,4 +1,106 @@
-1/1 [==============================] - 23s 23s/step
-Shape of enh_img: (1, 512, 512, 1)
-Input Resolution: 512x512
-Output Resolution: 512x512
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage import exposure
+from skimage.io import imread
+from datetime import datetime
+from scipy import ndimage
+import cv2
+from keras.optimizers import Adam
+
+# Ensure these functions are implemented elsewhere in your codebase
+# from your_code_base import (
+#     init_log, get_maximum_img_size_and_names, mkdir, CoarseNetmodel,
+#     FineNetmodel, FastEnhanceTexture, get_maps_STFT, label2mnt, py_cpu_nms,
+#     nms, fuse_nms, show_orientation_field, fuse_minu_orientation,
+#     mnt_writer, draw_minutiae
+# )
+
+# Paths and settings
+inference_set = ['../Dataset/prints_to_test_25/']
+CoarseNet_path = '../Models/CoarseNet.h5'
+FineNet_path = '../Models/FineNet.h5'
+output_dir = f'../output_CoarseNet_25/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+logging = init_log(output_dir)
+
+# Use FineNet for refinement
+isHavingFineNet = False
+
+# Create output directories
+for deploy_set in inference_set:
+    set_name = deploy_set.split('/')[-2]
+    os.makedirs(os.path.join(output_dir, set_name, 'mnt_results'), exist_ok=True)
+    os.makedirs(os.path.join(output_dir, set_name, 'seg_results'), exist_ok=True)
+    os.makedirs(os.path.join(output_dir, set_name, 'OF_results'), exist_ok=True)
+    os.makedirs(os.path.join(output_dir, set_name, 'enhance_img_results'), exist_ok=True)
+
+# Model initialization
+main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
+
+if isHavingFineNet:
+    model_FineNet = FineNetmodel(num_classes=2, pretrained_path=FineNet_path, input_shape=(224, 224, 3))
+    model_FineNet.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0), metrics=['accuracy'])
+
+# Processing images
+for deploy_set in inference_set:
+    set_name = deploy_set.split('/')[-2]
+    img_name, _, _ = get_maximum_img_size_and_names(deploy_set)
+
+    for i, name in enumerate(img_name):
+        logging.info(f"Processing image {i + 1}/{len(img_name)}: {name}")
+        image = imread(os.path.join(deploy_set, 'img_files', f'{name}.bmp'), as_gray=True)
+        img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
+        image = image[:img_size[0], :img_size[1]]
+
+        # Enhance texture and generate maps
+        texture_img = FastEnhanceTexture(image, sigma=2.5, show=False)
+        dir_map, fre_map = get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True)
+
+        # Predict outputs
+        image_input = np.reshape(image, [1, *image.shape, 1])
+        enh_img, enh_img_imag, enhance_img, *_ = main_net_model.predict(image_input)
+
+        # Inspect resolution
+        print(f"Input Resolution: {image.shape[0]}x{image.shape[1]}")
+        print(f"Output Resolution: {enh_img.shape[1]}x{enh_img.shape[2]}")
+
+        # Normalize outputs
+        def normalize_image(img):
+            img = (img - np.min(img)) / (np.max(img) - np.min(img) + 1e-8)
+            return (img * 255).astype(np.uint8)
+
+        enh_img_normalized = normalize_image(np.squeeze(enh_img[0, ..., 0]))
+        enh_img_imag_normalized = normalize_image(np.squeeze(enh_img_imag[0, ..., 0]))
+        enhance_img_normalized = normalize_image(np.squeeze(enhance_img[0, ..., 0]))
+
+        # Save outputs
+        plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{name}_enh_img.jpg", enh_img_normalized, cmap='gray')
+        plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{name}_enh_img_imag.jpg", enh_img_imag_normalized, cmap='gray')
+        plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{name}_enhance_img.jpg", enhance_img_normalized, cmap='gray')
+
+        # Debug visualization
+        plt.figure(figsize=(12, 4))
+        plt.subplot(1, 3, 1)
+        plt.imshow(enh_img_normalized, cmap='gray')
+        plt.title("Enh Image")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 2)
+        plt.imshow(enh_img_imag_normalized, cmap='gray')
+        plt.title("Enh Image Imaginary")
+        plt.axis('off')
+
+        plt.subplot(1, 3, 3)
+        plt.imshow(enhance_img_normalized, cmap='gray')
+        plt.title("Enhance Image")
+        plt.axis('off')
+        plt.tight_layout()
+        plt.show()
+
+        # Contrast enhancement (optional)
+        contrast_enhanced_img = exposure.equalize_adapthist(enhance_img_normalized)
+        plt.figure(figsize=(6, 6))
+        plt.imshow(contrast_enhanced_img, cmap='gray')
+        plt.title("Contrast Enhanced Image")
+        plt.axis('off')
+        plt.show()
