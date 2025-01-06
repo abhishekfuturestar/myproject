@@ -1,4 +1,38 @@
-Shape of enhance_img after squeeze: (512, 512)
-Min and Max values of enhance_img before normalization: 338169.625, 1414137.375
-Lower bound (2%): 585907.11125, Upper bound (98%): 1345842.0
-Min and Max values after percentile scaling: 0, 255
+from skimage import exposure
+
+# Remove the extra batch and channel dimensions
+enhance_img = np.squeeze(enhance_img)
+
+# Debug: Check the shape and range of values
+print(f"Shape of enhance_img after squeeze: {enhance_img.shape}")
+print(f"Min and Max values of enhance_img before normalization: {np.min(enhance_img)}, {np.max(enhance_img)}")
+
+# Step 1: Contrast Stretching
+lower_bound = np.percentile(enhance_img, 2)
+upper_bound = np.percentile(enhance_img, 98)
+
+print(f"Lower bound (2%): {lower_bound}, Upper bound (98%): {upper_bound}")
+
+# Rescale intensities to full range [0, 1]
+contrast_stretched = np.clip((enhance_img - lower_bound) / (upper_bound - lower_bound), 0, 1)
+
+# Step 2: Adaptive Histogram Equalization
+# Enhance contrast locally
+equalized = exposure.equalize_adapthist(contrast_stretched, clip_limit=0.03)
+
+# Convert to [0, 255] for saving
+enhanced_image = (equalized * 255).astype(np.uint8)
+
+# Debug: Check the result after equalization
+print(f"Min and Max values after adaptive equalization: {np.min(enhanced_image)}, {np.max(enhanced_image)}")
+
+# Optionally visualize the image
+plt.imshow(enhanced_image, cmap='gray')
+plt.title("Enhanced Image (Contrast Stretched + Equalized)")
+plt.show()
+
+# Save the enhanced image
+output_path = f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg"
+plt.imsave(output_path, enhanced_image, cmap='gray')
+
+print(f"Enhanced image saved at {output_path}")
