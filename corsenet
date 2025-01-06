@@ -1,3 +1,36 @@
-Shape of enhance_img after squeeze: (512, 512)
-Min and Max values of enhance_img before normalization: 338169.625, 1414137.375
-Min and Max values after log scaling and normalization: 229, 255
+# Remove the extra batch and channel dimensions
+enhance_img = np.squeeze(enhance_img)
+
+# Debug: Check the shape and range of values
+print(f"Shape of enhance_img after squeeze: {enhance_img.shape}")
+print(f"Min and Max values of enhance_img before scaling: {np.min(enhance_img)}, {np.max(enhance_img)}")
+
+# Use percentile normalization to improve contrast
+lower_percentile = 2  # Adjust this for darker images
+upper_percentile = 98  # Adjust this for brighter images
+
+# Calculate percentile values
+lower_bound = np.percentile(enhance_img, lower_percentile)
+upper_bound = np.percentile(enhance_img, upper_percentile)
+
+print(f"Lower bound (2%): {lower_bound}, Upper bound (98%): {upper_bound}")
+
+# Rescale based on the calculated bounds
+enhance_img_rescaled = np.clip((enhance_img - lower_bound) / (upper_bound - lower_bound), 0, 1)
+
+# Convert to [0, 255] for saving as an image
+enhance_img_rescaled = (enhance_img_rescaled * 255).astype(np.uint8)
+
+# Debug: Check the result after normalization
+print(f"Min and Max values after percentile scaling: {np.min(enhance_img_rescaled)}, {np.max(enhance_img_rescaled)}")
+
+# Optionally visualize the image
+plt.imshow(enhance_img_rescaled, cmap='gray')
+plt.title("Enhanced Image")
+plt.show()
+
+# Save the enhanced image
+output_path = f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg"
+plt.imsave(output_path, enhance_img_rescaled, cmap='gray')
+
+print(f"Enhanced image saved at {output_path}")
