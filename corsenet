@@ -1,2 +1,31 @@
-Shape of enhance_img after squeeze: (512, 512)
-Min and Max values of enhance_img before normalization: 338169.625, 1414137.375
+# Remove the extra batch and channel dimensions (assuming the model returns a shape of (1, 512, 512, 1))
+enhance_img = np.squeeze(enhance_img)
+
+# Check the shape and range of values for debugging
+print(f"Shape of enhance_img after squeeze: {enhance_img.shape}")
+print(f"Min and Max values of enhance_img before scaling: {np.min(enhance_img)}, {np.max(enhance_img)}")
+
+# Assuming the model is returning a much higher range of values, let's scale it down.
+# We can divide by a factor, for example by 1e5 or use a dynamic scaling method.
+
+# Method 1: Rescaling values to the range [0, 1]
+enhance_img = enhance_img / np.max(enhance_img)  # Rescale the image to [0, 1]
+
+# Method 2: Rescale to the range [0, 255] after normalization
+enhance_img_normalized = enhance_img * 255
+
+# Clip any potential outliers
+enhance_img_normalized = np.clip(enhance_img_normalized, 0, 255)
+
+# Convert to uint8
+enhance_img_normalized = enhance_img_normalized.astype(np.uint8)
+
+# Check the result after scaling and normalization
+print(f"Min and Max values after rescaling and normalization: {np.min(enhance_img_normalized)}, {np.max(enhance_img_normalized)}")
+
+# Optionally, visualize the image for debugging
+plt.imshow(enhance_img_normalized, cmap='gray')
+plt.show()
+
+# Save the enhanced image
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img_normalized, cmap='gray')
