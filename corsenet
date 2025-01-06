@@ -1,119 +1,24 @@
-# Required Libraries
-import os
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime
-from skimage.io import imread
-from keras.models import load_model
-from scipy import ndimage
-from time import time
-from keras.optimizers import Adam
+ enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = \
+            main_net_model.predict(image)
 
-# Initialize Logs
-def init_log(output_dir):
-    import logging
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-    log_file = os.path.join(output_dir, "log.txt")
-    handler = logging.FileHandler(log_file, mode="w")
-    logging.getLogger().addHandler(handler)
-    return logging
+        # #################################################Check the shape and values of enhance_img for debugging
 
-# Utility Functions
-def mkdir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
+        
+        print(f"Shape of enhance_img: {enhance_img.shape}")
+        print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
 
-def get_maximum_img_size_and_names(deploy_set):
-    # Placeholder function to read and return maximum image size and names
-    # Replace this with your actual implementation.
-    img_files = [f.split('.')[0] for f in os.listdir(os.path.join(deploy_set, 'img_files')) if f.endswith('.bmp')]
-    return img_files, deploy_set.split('/')[-2], (512, 512)  # Assuming max size is (512, 512)
+        # Normalize the enhance_img to proper image scale [0, 255]
+        enhance_img = np.clip(enhance_img, 0, 1)  # Ensure values are in the range [0, 1]
+        enhance_img = (enhance_img * 255).astype(np.uint8)  # Convert to 8-bit integers
 
-# Load CoarseNet and FineNet models
-def CoarseNetmodel(input_shape, model_path, mode='deploy'):
-    model = load_model(model_path)
-    return model
-
-def FineNetmodel(num_classes, pretrained_path, input_shape):
-    model = load_model(pretrained_path)
-    return model
-
-# Main Code
-inference_set = ['../Dataset/prints_to_test_25/']
-CoarseNet_path = '../Models/CoarseNet.h5'
-output_dir = '../output_CoarseNet_25/' + datetime.now().strftime('%Y%m%d-%H%M%S')
-FineNet_path = '../Models/FineNet.h5'
-logging = init_log(output_dir)
-
-# If use FineNet to refine, set into True
-isHavingFineNet = False
-
-for deploy_set in inference_set:
-    set_name = deploy_set.split('/')[-2]
-
-    # Read image and GT
-    img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
-
-    mkdir(f"{output_dir}/{set_name}/")
-    mkdir(f"{output_dir}/{set_name}/mnt_results/")
-    mkdir(f"{output_dir}/{set_name}/seg_results/")
-    mkdir(f"{output_dir}/{set_name}/OF_results/")
-    mkdir(f"{output_dir}/{set_name}/enhance_img_results/")
-
-    logging.info(f"Predicting \"{set_name}\":")
-
-    main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
-
-    # Load FineNet for refinement
-    if isHavingFineNet:
-        model_FineNet = FineNetmodel(num_classes=2, pretrained_path=FineNet_path, input_shape=(224, 224, 3))
-        model_FineNet.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0), metrics=['accuracy'])
-
-    for i in range(len(img_name)):
-        logging.info(f"\"{set_name}\" {i + 1} / {len(img_name)}: {img_name[i]}")
-
-        # Load and preprocess the image
-        image = imread(f"{deploy_set}img_files/{img_name[i]}.bmp", as_gray=True).astype(np.float32)
-        img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
-        image = image[:img_size[0], :img_size[1]]
-
-        original_image = image.copy()
-
-        # Generate OF (Optional implementation - include or replace as needed)
-        texture_img = FastEnhanceTexture(image, sigma=2.5, show=False)
-        dir_map, fre_map = get_maps_STFT(texture_img, patch_size=64, block_size=16, preprocess=True)
-
-        image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
-
-        # Perform predictions
-        predictions = main_net_model.predict(image)
-        enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = predictions
-
-        # Normalize the enhanced image
-        enhance_img = np.squeeze(enhance_img)
-        enhance_img = (enhance_img - np.min(enhance_img)) / (np.max(enhance_img) - np.min(enhance_img) + 1e-8)
-        enhance_img = (enhance_img * 255).astype(np.uint8)
+        # Optionally, visualize the image for debugging
+        # plt.imshow(enhance_img, cmap='gray')
+        # plt.show()
 
         # Save the enhanced image
         plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img, cmap='gray')
 
-        # Segment output processing
-        round_seg = np.round(np.squeeze(seg_out))
-        seg_out = 1 - round_seg
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10))
-        seg_out = cv2.morphologyEx(seg_out, cv2.MORPH_CLOSE, kernel)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-        seg_out = cv2.morphologyEx(seg_out, cv2.MORPH_OPEN, kernel)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        seg_out = cv2.dilate(seg_out, kernel)
 
-        # Generate mask and save segmentation results
-        final_mask = ndimage.zoom(np.round(np.squeeze(seg_out)), [8, 8], order=0)
-        plt.imsave(f"{output_dir}/{set_name}/seg_results/{img_name[i]}_seg.jpg", final_mask, cmap='gray')
 
-        # Placeholder for minutiae processing and saving minutiae results
-        # mnt_nms = process_and_save_minutiae(...)
-        # Save output minutiae and orientation results
-        # mnt_writer(...)
-        # draw_minutiae(...)
+Shape of enhance_img: (1, 512, 512, 1)
+Min and Max values of enhance_img: 338169.625, 1414137.375
