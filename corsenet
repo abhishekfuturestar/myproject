@@ -1,36 +1,15 @@
-# Remove the extra batch and channel dimensions
-enhance_img = np.squeeze(enhance_img)
+ enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = \
+            main_net_model.predict(image)
 
-# Debug: Check the shape and range of values
-print(f"Shape of enhance_img after squeeze: {enhance_img.shape}")
-print(f"Min and Max values of enhance_img before scaling: {np.min(enhance_img)}, {np.max(enhance_img)}")
+        # #################################################Check the shape and values of enhance_img for debugging
 
-# Use percentile normalization to improve contrast
-lower_percentile = 2  # Adjust this for darker images
-upper_percentile = 98  # Adjust this for brighter images
 
-# Calculate percentile values
-lower_bound = np.percentile(enhance_img, lower_percentile)
-upper_bound = np.percentile(enhance_img, upper_percentile)
+        enhance_img = np.squeeze(enhance_img)
+        print(f"Shape of enhance_img: {enhance_img.shape}")
+        print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
 
-print(f"Lower bound (2%): {lower_bound}, Upper bound (98%): {upper_bound}")
-
-# Rescale based on the calculated bounds
-enhance_img_rescaled = np.clip((enhance_img - lower_bound) / (upper_bound - lower_bound), 0, 1)
-
-# Convert to [0, 255] for saving as an image
-enhance_img_rescaled = (enhance_img_rescaled * 255).astype(np.uint8)
-
-# Debug: Check the result after normalization
-print(f"Min and Max values after percentile scaling: {np.min(enhance_img_rescaled)}, {np.max(enhance_img_rescaled)}")
-
-# Optionally visualize the image
-plt.imshow(enhance_img_rescaled, cmap='gray')
-plt.title("Enhanced Image")
-plt.show()
-
-# Save the enhanced image
-output_path = f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg"
-plt.imsave(output_path, enhance_img_rescaled, cmap='gray')
-
-print(f"Enhanced image saved at {output_path}")
+        # Normalize the enhance_img to proper image scale [0, 255]
+        enhance_img = (enhance_img - np.min(enhance_img)) / (np.max(enhance_img) - np.min(enhance_img) + 1e-8)  # Ensure values are in the range [0, 1]
+        enhance_img = (enhance_img * 255).astype(np.uint8) # Convert to 8-bit integers
+        plt.imshow(enhance_img, cmap='gray')
+        plt.show()
