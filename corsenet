@@ -1,24 +1,2 @@
- enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = \
-            main_net_model.predict(image)
-
-        # #################################################Check the shape and values of enhance_img for debugging
-
-        
-        print(f"Shape of enhance_img: {enhance_img.shape}")
-        print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
-
-        # Normalize the enhance_img to proper image scale [0, 255]
-        enhance_img = np.clip(enhance_img, 0, 1)  # Ensure values are in the range [0, 1]
-        enhance_img = (enhance_img * 255).astype(np.uint8)  # Convert to 8-bit integers
-
-        # Optionally, visualize the image for debugging
-        # plt.imshow(enhance_img, cmap='gray')
-        # plt.show()
-
-        # Save the enhanced image
-        plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img, cmap='gray')
-
-
-
-Shape of enhance_img: (1, 512, 512, 1)
+Shape of enhance_img: (512, 512)
 Min and Max values of enhance_img: 338169.625, 1414137.375
