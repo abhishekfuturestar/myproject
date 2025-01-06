@@ -1,22 +1,2 @@
-# Remove the extra batch and channel dimensions (assuming the model returns a shape of (1, 512, 512, 1))
-enhance_img = np.squeeze(enhance_img)
-
-# Check the shape and range of values for debugging
-print(f"Shape of enhance_img after squeeze: {enhance_img.shape}")
-print(f"Min and Max values of enhance_img before normalization: {np.min(enhance_img)}, {np.max(enhance_img)}")
-
-# Normalize enhance_img to the range [0, 1] using min-max normalization
-enhance_img_normalized = (enhance_img - np.min(enhance_img)) / (np.max(enhance_img) - np.min(enhance_img) + 1e-8)
-
-# Scale to the range [0, 255] and convert to uint8 for image saving
-enhance_img_normalized = (enhance_img_normalized * 255).astype(np.uint8)
-
-# Check the result after normalization
-print(f"Min and Max values after normalization: {np.min(enhance_img_normalized)}, {np.max(enhance_img_normalized)}")
-
-# Optionally, visualize the image for debugging
-plt.imshow(enhance_img_normalized, cmap='gray')
-plt.show()
-
-# Save the enhanced image
-plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img_normalized, cmap='gray')
+Shape of enhance_img after squeeze: (512, 512)
+Min and Max values of enhance_img before normalization: 338169.625, 1414137.375
