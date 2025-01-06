@@ -1,3 +1,32 @@
-Shape of enhance_img after squeeze: (512, 512)
-Min and Max values of enhance_img before normalization: 338169.625, 1414137.375
-Min and Max values after rescaling and normalization: 60, 255
+# Remove the extra batch and channel dimensions (assuming the model returns a shape of (1, 512, 512, 1))
+enhance_img = np.squeeze(enhance_img)
+
+# Check the shape and range of values for debugging
+print(f"Shape of enhance_img after squeeze: {enhance_img.shape}")
+print(f"Min and Max values of enhance_img before scaling: {np.min(enhance_img)}, {np.max(enhance_img)}")
+
+# Method: Logarithmic scaling (to compress the range)
+# Add a small constant to avoid log(0)
+enhance_img_log = np.log(enhance_img + 1e-6)
+
+# Normalize the log-scaled image to the range [0, 1]
+enhance_img_log_normalized = enhance_img_log / np.max(enhance_img_log)
+
+# Rescale to [0, 255] for image saving
+enhance_img_log_normalized = enhance_img_log_normalized * 255
+
+# Clip values to ensure they're in the valid image range
+enhance_img_log_normalized = np.clip(enhance_img_log_normalized, 0, 255)
+
+# Convert to uint8 for image saving
+enhance_img_log_normalized = enhance_img_log_normalized.astype(np.uint8)
+
+# Check the result after scaling and normalization
+print(f"Min and Max values after log scaling and normalization: {np.min(enhance_img_log_normalized)}, {np.max(enhance_img_log_normalized)}")
+
+# Optionally, visualize the image for debugging
+plt.imshow(enhance_img_log_normalized, cmap='gray')
+plt.show()
+
+# Save the enhanced image
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img_log_normalized, cmap='gray')
