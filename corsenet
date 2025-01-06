@@ -1,24 +1,47 @@
-enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = \
-            main_net_model.predict(image)
+# Get the predictions
+enh_img, enh_img_imag, enhance_img, ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = main_net_model.predict(image)
 
-        # #################################################Check the shape and values of enhance_img for debugging
+# Process the images for visualization and saving
+enh_img = np.squeeze(enh_img)
+enh_img_imag = np.squeeze(enh_img_imag)
+enhance_img = np.squeeze(enhance_img)
 
+# Print shapes and min/max values
+print(f"Shape of enh_img: {enh_img.shape}, Min and Max values: {np.min(enh_img)}, {np.max(enh_img)}")
+print(f"Shape of enh_img_imag: {enh_img_imag.shape}, Min and Max values: {np.min(enh_img_imag)}, {np.max(enh_img_imag)}")
+print(f"Shape of enhance_img: {enhance_img.shape}, Min and Max values: {np.min(enhance_img)}, {np.max(enhance_img)}")
 
-        enhance_img = np.squeeze(enhance_img)
-        print(f"Shape of enhance_img: {enhance_img.shape}")
-        print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
+# Normalize the images to scale [0, 255]
+def normalize_image(image):
+    image = (image - np.min(image)) / (np.max(image) - np.min(image) + 1e-8)  # Scale to [0, 1]
+    return (image * 255).astype(np.uint8)  # Convert to 8-bit integers
 
-        # Normalize the enhance_img to proper image scale [0, 255]
-        enhance_img = (enhance_img - np.min(enhance_img)) / (np.max(enhance_img) - np.min(enhance_img) + 1e-8)  # Ensure values are in the range [0, 1]
-        enhance_img = (enhance_img * 255).astype(np.uint8) # Convert to 8-bit integers
-        plt.imshow(enhance_img, cmap='gray')
-        plt.show()
+enh_img_normalized = normalize_image(enh_img)
+enh_img_imag_normalized = normalize_image(enh_img_imag)
+enhance_img_normalized = normalize_image(enhance_img)
 
+# Save the images to the specified directory
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enh_img.jpg", enh_img_normalized, cmap='gray')
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enh_img_imag.jpg", enh_img_imag_normalized, cmap='gray')
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img_normalized, cmap='gray')
 
+# Display the images
+plt.figure(figsize=(12, 4))
 
-        # Optionally, visualize the image for debugging
-        # plt.imshow(enhance_img, cmap='gray')
-        # plt.show()
+plt.subplot(1, 3, 1)
+plt.imshow(enh_img_normalized, cmap='gray')
+plt.title("Enh Image")
+plt.axis('off')
 
-        # Save the enhanced image
-        plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img, cmap='gray')
+plt.subplot(1, 3, 2)
+plt.imshow(enh_img_imag_normalized, cmap='gray')
+plt.title("Enh Image Imaginary")
+plt.axis('off')
+
+plt.subplot(1, 3, 3)
+plt.imshow(enhance_img_normalized, cmap='gray')
+plt.title("Enhance Image")
+plt.axis('off')
+
+plt.tight_layout()
+plt.show()
