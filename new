@@ -1,5 +1,8 @@
+# Remove the batch and channel dimensions (assuming batch size is 1 and image has a single channel)
+enhance_img = np.squeeze(enhance_img)
+
 # Check shape and value range of enhance_img for debugging
-print(f"Shape of enhance_img: {enhance_img.shape}")
+print(f"Shape of enhance_img after squeeze: {enhance_img.shape}")
 print(f"Min and Max values of enhance_img: {np.min(enhance_img)}, {np.max(enhance_img)}")
 
 # Normalize enhance_img to the range [0, 1]
@@ -8,5 +11,9 @@ enhance_img = (enhance_img - np.min(enhance_img)) / (np.max(enhance_img) - np.mi
 # Scale to [0, 255] and convert to uint8
 enhance_img = (enhance_img * 255).astype(np.uint8)
 
+# Optionally, visualize the image for debugging
+plt.imshow(enhance_img, cmap='gray')
+plt.show()
+
 # Save the enhanced image
-plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img.squeeze(), cmap='gray')
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img, cmap='gray')
