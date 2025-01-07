@@ -1,15 +1,13 @@
-"""Code for FineNet in paper "Robust Minutiae Extractor: Integrating Deep Networks and Fingerprint Domain Knowledge" at ICB 2018
-  https://arxiv.org/pdf/1712.09401.pdf
+import tensorflow as tf
 
-  If you use whole or partial function in this code, please cite paper:
+# Load the CoarseNet model from the .h5 file
+CoarseNet_model = tf.keras.models.load_model('../Models/CoarseNet.h5')
 
-  @inproceedings{Nguyen_MinutiaeNet,
-    author    = {Dinh-Luan Nguyen and Kai Cao and Anil K. Jain},
-    title     = {Robust Minutiae Extractor: Integrating Deep Networks and Fingerprint Domain Knowledge},
-    booktitle = {The 11th International Conference on Biometrics, 2018},
-    year      = {2018},
-    }
-"""
+# Check the model summary to see its structure
+CoarseNet_model.summary()
+
+
+
 
 from __future__ import absolute_import
 from __future__ import division
