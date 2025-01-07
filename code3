@@ -1,31 +1,25 @@
-ValueError                                Traceback (most recent call last)
-Cell In[5], line 63
-     60 print(enhance_img)
-     62 # Save the variables as images
----> 63 plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enh_img.jpg", enh_img[0], cmap='gray')
-     64 plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enh_img_imag.jpg", enh_img_imag[0], cmap='gray')
-     65 plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img[0], cmap='gray')
+# Save the variables as images (ensuring 2D arrays for grayscale)
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enh_img.jpg", enh_img[0, :, :, 0], cmap='gray')
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enh_img_imag.jpg", enh_img_imag[0, :, :, 0], cmap='gray')
+plt.imsave(f"{output_dir}/{set_name}/enhance_img_results/{img_name[i]}_enhance_img.jpg", enhance_img[0, :, :, 0], cmap='gray')
 
-File ~\AppData\Local\Programs\Python\Python311\Lib\site-packages\matplotlib\pyplot.py:2604, in imsave(fname, arr, **kwargs)
-   2600 @_copy_docstring_and_deprecators(matplotlib.image.imsave)
-   2601 def imsave(
-   2602     fname: str | os.PathLike | BinaryIO, arr: ArrayLike, **kwargs
-   2603 ) -> None:
--> 2604     matplotlib.image.imsave(fname, arr, **kwargs)
 
-File ~\AppData\Local\Programs\Python\Python311\Lib\site-packages\matplotlib\image.py:1636, in imsave(fname, arr, vmin, vmax, cmap, format, origin, dpi, metadata, pil_kwargs)
-   1634     sm = cm.ScalarMappable(cmap=cmap)
-   1635     sm.set_clim(vmin, vmax)
--> 1636     rgba = sm.to_rgba(arr, bytes=True)
-   1637 if pil_kwargs is None:
-   1638     pil_kwargs = {}
+plt.figure(figsize=(12, 4))
 
-File ~\AppData\Local\Programs\Python\Python311\Lib\site-packages\matplotlib\cm.py:399, in ScalarMappable.to_rgba(self, x, alpha, bytes, norm)
-    397     xx = x
-    398 else:
---> 399     raise ValueError("Third dimension must be 3 or 4")
-    400 if xx.dtype.kind == 'f':
-    401     # If any of R, G, B, or A is nan, set to 0
-    402     if np.any(nans := np.isnan(x)):
+plt.subplot(1, 3, 1)
+plt.imshow(enh_img[0, :, :, 0], cmap='gray')
+plt.title("Enh Image")
+plt.axis('off')
 
-ValueError: Third dimension must be 3 or 4
+plt.subplot(1, 3, 2)
+plt.imshow(enh_img_imag[0, :, :, 0], cmap='gray')
+plt.title("Enh Image Imaginary")
+plt.axis('off')
+
+plt.subplot(1, 3, 3)
+plt.imshow(enhance_img[0, :, :, 0], cmap='gray')
+plt.title("Enhance Image")
+plt.axis('off')
+
+plt.tight_layout()
+plt.show()
