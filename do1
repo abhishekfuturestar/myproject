@@ -2,3 +2,5 @@ Enhancing Image Features Using Gabor Filters for Texture and Orientation Analysi
 
 he application of Gabor filters for improving image quality and extracting meaningful features. Gabor filters are widely used in image processing for their ability to analyze spatial frequency, orientation,
 and texture information effectively. 
+
+the use of Gabor filters to enhance image features (enh_img), compute real and imaginary components (enh_img_real, enh_img_imag), and extract orientation outputs (ori_out_1). The integration of these filters within the CoarseNet framework provides a robust mechanism for texture enhancement and orientation estimation, critical for tasks like fingerprint analysis and other feature-driven image applications.
