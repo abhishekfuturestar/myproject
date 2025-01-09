@@ -1,10 +1,10 @@
 
 # Prepare dataset for testing. 
-inference_set = ['../Dataset/NeetPGlow_all_bmps/',]
+inference_set = ['../Dataset/prints_to_test_25/',]
 
 CoarseNet_path = '../Models/CoarseNet.h5'
 
-output_dir = '../Output_2.8k/'+datetime.now().strftime('%Y%m%d-%H%M%S')
+output_dir = '../output_CoarseNet_25/'+datetime.now().strftime('%Y%m%d-%H%M%S')
 
 FineNet_path = '../Models/FineNet.h5'
 
@@ -13,7 +13,6 @@ logging = init_log(output_dir)
 # If use FineNet to refine, set into True
 isHavingFineNet = False
 
-
 for i, deploy_set in enumerate(inference_set):
     set_name = deploy_set.split('/')[-2]
 
@@ -21,9 +20,9 @@ for i, deploy_set in enumerate(inference_set):
     img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
 
     mkdir(output_dir + '/'+ set_name + '/')
-    mkdir(output_dir + '/' + set_name + '/mnt_results/')
-    mkdir(output_dir + '/'+ set_name + '/seg_results/')
-    mkdir(output_dir + '/' + set_name + '/OF_results/')
+   # mkdir(output_dir + '/' + set_name + '/mnt_results/')
+   # mkdir(output_dir + '/'+ set_name + '/seg_results/')
+    # mkdir(output_dir + '/' + set_name + '/OF_results/')
 
     logging.info("Predicting \"%s\":" % (set_name))
 
