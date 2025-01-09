@@ -12,6 +12,7 @@ CoarseNet_path = '../Models/CoarseNet.h5'
 output_dir = '../output_CoarseNet_25/' + datetime.now().strftime('%Y%m%d-%H%M%S')
 FineNet_path = '../Models/FineNet.h5'
 
+# Initialize logging
 logging = init_log(output_dir)
 
 # If use FineNet to refine, set into True
@@ -22,34 +23,39 @@ def mkdir(directory):
     os.makedirs(directory, exist_ok=True)
 
 # Helper function to save and display images
-def save_and_display_images(output_array, output_dir, prefix="img"):
+def save_and_display_images(image, output_dir, image_name):
     """
-    Save images to the specified directory and display them.
-    Each image is normalized and saved with a unique name.
+    Save and optionally display the image.
+    Normalize the image before saving it.
     """
     mkdir(output_dir)
-    for idx, img in enumerate(output_array):
-        # Normalize the image
-        img_normalized = (img - np.min(img)) / (np.max(img) - np.min(img)) * 255.0
-        img_normalized = img_normalized.astype(np.uint8)
-        
-        # Save the image
-        save_path = os.path.join(output_dir, f"{prefix}_{idx}.png")
-        cv2.imwrite(save_path, img_normalized)
-        
-        # Display the image
-        plt.figure()
-        plt.imshow(img_normalized, cmap='gray')
-        plt.title(f"{prefix}_{idx}")
-        plt.axis('off')
-        plt.show()
+    # Normalize the image
+    img_normalized = (image - np.min(image)) / (np.max(image) - np.min(image)) * 255.0
+    img_normalized = img_normalized.astype(np.uint8)
+    
+    # Save the image
+    save_path = os.path.join(output_dir, f"{image_name}.png")
+    cv2.imwrite(save_path, img_normalized)
+    
+    # Display the image
+    plt.figure()
+    plt.imshow(img_normalized, cmap='gray')
+    plt.title(image_name)
+    plt.axis('off')
+    plt.show()
 
 for deploy_set in inference_set:
     set_name = deploy_set.split('/')[-2]
     img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
 
-    # Create output directories
-    mkdir(output_dir + '/' + set_name)
+    # Create output directories for each variable
+    enh_img_dir = os.path.join(output_dir, set_name, 'enh_img')
+    enh_img_imag_dir = os.path.join(output_dir, set_name, 'enh_img_imag')
+    enhance_img_dir = os.path.join(output_dir, set_name, 'enhance_img')
+
+    mkdir(enh_img_dir)
+    mkdir(enh_img_imag_dir)
+    mkdir(enhance_img_dir)
 
     logging.info(f"Predicting \"{set_name}\":")
 
@@ -67,7 +73,7 @@ for deploy_set in inference_set:
         logging.info(f"\"{set_name}\" {i + 1} / {len(img_name)}: {name}")
         
         # Read and preprocess the image
-        image = imread(deploy_set + 'img_files/' + name + '.bmp', as_gray=True)
+        image = imread(os.path.join(deploy_set, 'img_files', f"{name}.bmp"), as_gray=True)
         img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
         image = image[:img_size[0], :img_size[1]]
 
@@ -77,14 +83,9 @@ for deploy_set in inference_set:
         # Model prediction
         enh_img, enh_img_imag, enhance_img = main_net_model.predict(image_input)
 
-        # Define output directories for the variables
-        enh_img_dir = os.path.join(output_dir, set_name, 'enh_img')
-        enh_img_imag_dir = os.path.join(output_dir, set_name, 'enh_img_imag')
-        enhance_img_dir = os.path.join(output_dir, set_name, 'enhance_img')
-
-        # Save and display the images
-        save_and_display_images(enh_img[0], enh_img_dir, prefix="enh_img")
-        save_and_display_images(enh_img_imag[0], enh_img_imag_dir, prefix="enh_img_imag")
-        save_and_display_images(enhance_img[0], enhance_img_dir, prefix="enhance_img")
+        # Save and display the images for each variable
+        save_and_display_images(enh_img[0, :, :, 0], enh_img_dir, f"enh_img_{name}")
+        save_and_display_images(enh_img_imag[0, :, :, 0], enh_img_imag_dir, f"enh_img_imag_{name}")
+        save_and_display_images(enhance_img[0, :, :, 0], enhance_img_dir, f"enhance_img_{name}")
 
 print("All images have been processed and saved.")
