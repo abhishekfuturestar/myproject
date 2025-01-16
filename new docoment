@@ -1,16 +1,16 @@
 import cv2
 import numpy as np
 from skimage.filters import meijering
-from skimage.io import imread, imsave
+from skimage.io import imsave
 import os
-
 
 def apply_ridge_compensation_filter(image_path, output_path):
     # Read the image (grayscale)
-    image = cv2.imread('C:/Users/2179048/Desktop/Final images/enhance_img_PG23004128.png', cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if image is None:
         print(f"Error: Unable to read the image from {image_path}")
         return
+
     # Normalize the image to range [0, 1]
     normalized_image = image / 255.0
 
@@ -21,8 +21,15 @@ def apply_ridge_compensation_filter(image_path, output_path):
     enhanced_image_uint8 = (enhanced_image * 255).astype(np.uint8)
 
     # Save the output image
-    imsave('C:/Users/2179048/Desktop/Final images/output', enhanced_image_uint8)
+    output_dir = os.path.dirname(output_path)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    imsave(output_path, enhanced_image_uint8)
     print(f"Enhanced image saved to: {output_path}")
 
 # Path to the input and output images
-apply_ridge_compensation_filter('C:/Users/2179048/Desktop/Final images/enhance_img_PG23004128.png','C:/Users/2179048/Desktop/Final images/output')
+apply_ridge_compensation_filter(
+    'C:/Users/2179048/Desktop/Final images/enhance_img_PG23004128.png',
+    'C:/Users/2179048/Desktop/Final images/output/enhanced_image.png'
+)
