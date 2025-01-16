@@ -1,96 +1,37 @@
-import os
 import cv2
 import numpy as np
-from datetime import datetime
-from skimage.io import imread
-import matplotlib.pyplot as plt
+from skimage.filters import meijering
+from skimage.io import imread, imsave
+import os
 
-# Prepare dataset for testing
-inference_set = ['../Dataset/prints_to_test_25/']
+def apply_ridge_compensation_filter(image_path, output_path):
+    # Read the image (grayscale)
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        print(f"Error: Unable to read the image from {image_path}")
+        return
 
-CoarseNet_path = '../Models/CoarseNet.h5'
-output_dir = '../output_CoarseNet_25/' + datetime.now().strftime('%Y%m%d-%H%M%S')
-FineNet_path = '../Models/FineNet.h5'
+    # Normalize the image to range [0, 1]
+    normalized_image = image / 255.0
 
-# Initialize logging
-logging = init_log(output_dir)
+    # Apply ridge compensation filter using Meijering filter
+    enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=True)
 
-# If use FineNet to refine, set into True
-isHavingFineNet = False
+    # Convert the result back to the range [0, 255]
+    enhanced_image_uint8 = (enhanced_image * 255).astype(np.uint8)
 
-# Helper function to create directories
-def mkdir(directory):
-    os.makedirs(directory, exist_ok=True)
+    # Save the output image
+    imsave(output_path, enhanced_image_uint8)
+    print(f"Enhanced image saved to: {output_path}")
 
-# Helper function to save and display images
-def save_and_display_images(image, output_dir, image_name):
-    """
-    Save the image to the specified directory and display it.
-    """
-    mkdir(output_dir)  # Ensure the directory exists
-    
-    # Normalize the image for saving
-    img_normalized = (image - np.min(image)) / (np.max(image) - np.min(image)) * 255.0
-    img_normalized = img_normalized.astype(np.uint8)
-    
-    # Save the image
-    save_path = os.path.join(output_dir, f"{image_name}.png")
-    cv2.imwrite(save_path, img_normalized)
-    
-    # Display the image
-    plt.figure()
-    plt.imshow(img_normalized, cmap='gray')
-    plt.title(image_name)
-    plt.axis('off')
-    plt.show()
+# Path to the input and output images
+input_folder = os.path.expanduser("~/Desktop/myimages")
+output_folder = os.path.join(input_folder, "enhanced")
+os.makedirs(output_folder, exist_ok=True)
 
-# Main processing loop
-for deploy_set in inference_set:
-    set_name = deploy_set.split('/')[-2]
-    
-    # Get image names and properties
-    img_name, folder_name, img_size = get_maximum_img_size_and_names(deploy_set)
-
-    # Create output directories for each variable
-    enh_img_dir = os.path.join(output_dir, set_name, 'enh_img')
-    enh_img_imag_dir = os.path.join(output_dir, set_name, 'enh_img_imag')
-    enhance_img_dir = os.path.join(output_dir, set_name, 'enhance_img')
-
-    mkdir(enh_img_dir)
-    mkdir(enh_img_imag_dir)
-    mkdir(enhance_img_dir)
-
-    logging.info(f"Predicting \"{set_name}\":")
-
-    main_net_model = CoarseNetmodel((None, None, 1), CoarseNet_path, mode='deploy')
-
-    if isHavingFineNet:
-        model_FineNet = FineNetmodel(num_classes=2,
-                                     pretrained_path=FineNet_path,
-                                     input_shape=(224, 224, 3))
-        model_FineNet.compile(loss='categorical_crossentropy',
-                              optimizer=Adam(lr=0),
-                              metrics=['accuracy'])
-
-    # Process each image in the dataset
-    for i, name in enumerate(img_name):
-        logging.info(f"\"{set_name}\" {i + 1} / {len(img_name)}: {name}")
-        
-        # Read and preprocess the image
-        image_path = os.path.join(deploy_set, 'img_files', f"{name}.bmp")
-        image = imread(image_path, as_gray=True)
-        img_size = np.array(image.shape, dtype=np.int32) // 8 * 8
-        image = image[:img_size[0], :img_size[1]]
-
-        # Prepare image for model prediction
-        image_input = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
-
-        # Model prediction
-        enh_img, enh_img_imag, enhance_img = main_net_model.predict(image_input)
-
-        # Save and display the images for each variable
-        save_and_display_images(enh_img[0, :, :, 0], enh_img_dir, f"enh_img_{name}")
-        save_and_display_images(enh_img_imag[0, :, :, 0], enh_img_imag_dir, f"enh_img_imag_{name}")
-        save_and_display_images(enhance_img[0, :, :, 0], enhance_img_dir, f"enhance_img_{name}")
-
-print("All images have been processed and saved.")
+# Process each image in the folder
+for file_name in os.listdir(input_folder):
+    if file_name.lower().endswith(('png', 'jpg', 'jpeg', 'bmp', 'tiff')):
+        input_path = os.path.join(input_folder, file_name)
+        output_path = os.path.join(output_folder, f"enhanced_{file_name}")
+        apply_ridge_compensation_filter(input_path, output_path)
