@@ -30,6 +30,6 @@ def apply_ridge_compensation_filter(image_path, output_path):
 
 # Path to the input and output images
 apply_ridge_compensation_filter(
-    'C:/Users/2179048/Desktop/Final images/enhance_img_PG23004128.png',
-    'C:/Users/2179048/Desktop/Final images/output/enhanced_image.png'
+    'C:/Users/2179048/Desktop/Final images/PG23095185.bmp',
+    'C:/Users/2179048/Desktop/Final images/output/enhanced_image1.png'
 )
