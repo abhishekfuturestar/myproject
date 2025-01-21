@@ -21,18 +21,17 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             # Normalize the image to range [0, 1]
             normalized_image = image / 255.0
 
-            # Apply the Meijering filter to enhance ridges
-            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=True)
+            # Create a mask for the fingerprint region (non-white areas)
+            mask = (normalized_image < 1).astype(np.uint8)
 
-            # Convert the enhanced image to uint8 range [0, 255]
-            enhanced_image_uint8 = (enhanced_image * 255).astype(np.uint8)
+            # Apply the Meijering filter to the entire image
+            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=False)
 
-            # Remove black background by ensuring all background areas are set to white
-            # Create a mask of the non-black regions
-            mask = (image > 0).astype(np.uint8)
+            # Preserve the white background and only enhance the fingerprint
+            combined_image = np.where(mask == 1, enhanced_image, 1.0)  # Keep the background white (value 1.0)
 
-            # Set the black background in the output to white
-            final_image = np.where(mask == 1, enhanced_image_uint8, 255)
+            # Convert the result back to [0, 255] range
+            final_image = (combined_image * 255).astype(np.uint8)
 
             # Generate the output file path
             output_path = os.path.join(output_folder, f"enhanced_{file_name}")
@@ -42,7 +41,7 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             print(f"Enhanced image saved to: {output_path}")
 
 # Define the input and output folders
-input_folder = 'C:/Users/2179048/Desktop/ridge_ compen/input'
-output_folder = 'C:/Users/2179048/Desktop/ridge_ compen/output'
+input_folder = 'C:/Users/2179048/Desktop/ridge_compen2/input'
+output_folder = 'C:/Users/2179048/Desktop/ridge_compen2/output'
 
 apply_ridge_compensation_filter(input_folder, output_folder)
