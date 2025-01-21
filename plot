@@ -24,14 +24,15 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             # Apply the Meijering filter to enhance ridges
             enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=True)
 
-            # Threshold to create a binary-like image
-            binary_image = (enhanced_image > 0.5).astype(np.uint8)  # 0.5 is the threshold value
+            # Convert the enhanced image to uint8 range [0, 255]
+            enhanced_image_uint8 = (enhanced_image * 255).astype(np.uint8)
 
-            # Invert the binary image so ridges are black and background is white
-            inverted_image = 1 - binary_image
+            # Remove black background by ensuring all background areas are set to white
+            # Create a mask of the non-black regions
+            mask = (image > 0).astype(np.uint8)
 
-            # Convert to uint8 for saving (0-255 range)
-            final_image = (inverted_image * 255).astype(np.uint8)
+            # Set the black background in the output to white
+            final_image = np.where(mask == 1, enhanced_image_uint8, 255)
 
             # Generate the output file path
             output_path = os.path.join(output_folder, f"enhanced_{file_name}")
