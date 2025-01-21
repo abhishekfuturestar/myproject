@@ -21,17 +21,20 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             # Normalize the image to range [0, 1]
             normalized_image = image / 255.0
 
-            # Create a mask for the fingerprint region (non-white areas)
-            mask = (normalized_image < 1).astype(np.uint8)
+            # Apply the Meijering filter to enhance ridges
+            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=True)
 
-            # Apply the Meijering filter to the entire image
-            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=False)
+            # Convert the enhanced image to uint8 range [0, 255]
+            enhanced_image_uint8 = (enhanced_image * 255).astype(np.uint8)
 
-            # Preserve the white background and only enhance the fingerprint
-            combined_image = np.where(mask == 1, enhanced_image, 1.0)  # Keep the background white (value 1.0)
+            # Create a mask of the non-black regions (regions where the input is not completely black)
+            mask = (image > 0).astype(np.uint8)
 
-            # Convert the result back to [0, 255] range
-            final_image = (combined_image * 255).astype(np.uint8)
+            # Replace any remaining black pixels in the output with white
+            final_image = np.where(mask == 1, enhanced_image_uint8, 255)
+
+            # Ensure all black pixels (value 0) are converted to white in the output
+            final_image[final_image == 0] = 255
 
             # Generate the output file path
             output_path = os.path.join(output_folder, f"enhanced_{file_name}")
@@ -41,7 +44,7 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             print(f"Enhanced image saved to: {output_path}")
 
 # Define the input and output folders
-input_folder = 'C:/Users/2179048/Desktop/ridge_compen2/input'
-output_folder = 'C:/Users/2179048/Desktop/ridge_compen2/output'
+input_folder = 'C:/Users/2179048/Desktop/ridge_ compen/input'
+output_folder = 'C:/Users/2179048/Desktop/ridge_ compen/output'
 
 apply_ridge_compensation_filter(input_folder, output_folder)
