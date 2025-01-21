@@ -27,14 +27,11 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             # Convert the enhanced image to uint8 range [0, 255]
             enhanced_image_uint8 = (enhanced_image * 255).astype(np.uint8)
 
-            # Create a mask of the non-black regions (regions where the input is not completely black)
-            mask = (image > 0).astype(np.uint8)
+            # Create a mask for the fingerprint region (non-white areas in the input image)
+            mask = (image < 250).astype(np.uint8)  # Assuming white background has high intensity (close to 255)
 
-            # Replace any remaining black pixels in the output with white
+            # Ensure the background outside the fingerprint is white
             final_image = np.where(mask == 1, enhanced_image_uint8, 255)
-
-            # Ensure all black pixels (value 0) are converted to white in the output
-            final_image[final_image == 0] = 255
 
             # Generate the output file path
             output_path = os.path.join(output_folder, f"enhanced_{file_name}")
