@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 from skimage.filters import meijering
@@ -26,7 +25,8 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             normalized_image = image / 255.0
 
             # Apply ridge compensation filter using Meijering filter
-            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=True)
+            # Set black_ridges=False to prevent black borders
+            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=False)
 
             # Convert the result back to the range [0, 255]
             enhanced_image_uint8 = (enhanced_image * 255).astype(np.uint8)
