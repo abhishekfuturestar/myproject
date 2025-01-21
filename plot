@@ -21,17 +21,17 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             # Normalize the image to range [0, 1]
             normalized_image = image / 255.0
 
-            # Create a mask for the fingerprint region (non-white areas)
-            mask = (normalized_image < 1).astype(np.uint8)
+            # Apply the Meijering filter to enhance ridges
+            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=True)
 
-            # Apply the Meijering filter to the entire image
-            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=False)
+            # Threshold to create a binary-like image
+            binary_image = (enhanced_image > 0.5).astype(np.uint8)  # 0.5 is the threshold value
 
-            # Preserve the white background and only enhance the fingerprint
-            combined_image = np.where(mask == 1, enhanced_image, 1.0)  # Keep the background white (value 1.0)
+            # Invert the binary image so ridges are black and background is white
+            inverted_image = 1 - binary_image
 
-            # Convert the result back to [0, 255] range
-            final_image = (combined_image * 255).astype(np.uint8)
+            # Convert to uint8 for saving (0-255 range)
+            final_image = (inverted_image * 255).astype(np.uint8)
 
             # Generate the output file path
             output_path = os.path.join(output_folder, f"enhanced_{file_name}")
