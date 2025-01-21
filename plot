@@ -12,35 +12,35 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
         input_path = os.path.join(input_folder, file_name)
 
         if os.path.isfile(input_path):
+            # Read the image (grayscale)
             image = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
             if image is None:
                 print(f"Error: Unable to read the image from {input_path}")
                 continue
 
+            # Normalize the image to range [0, 1]
             normalized_image = image / 255.0
 
-            # Add padding
-            padded_image = cv2.copyMakeBorder(
-                normalized_image, 10, 10, 10, 10, cv2.BORDER_REFLECT
-            )
+            # Create a mask for the fingerprint region (non-black areas in the original image)
+            mask = (normalized_image > 0).astype(np.uint8)
 
-            # Apply Meijering filter
-            enhanced_image = meijering(padded_image, sigmas=range(1, 5), black_ridges=False)
+            # Apply the Meijering filter
+            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=False)
 
-            # Crop padding
-            height, width = normalized_image.shape
-            cropped_image = enhanced_image[10:10 + height, 10:10 + width]
+            # Combine the enhanced fingerprint with the original background using the mask
+            combined_image = np.where(mask == 1, enhanced_image, normalized_image)
 
-            # Mask black regions
-            masked_image = np.where(cropped_image == 0, normalized_image, cropped_image)
+            # Convert the result back to [0, 255] range
+            final_image = (combined_image * 255).astype(np.uint8)
 
-            # Convert to uint8
-            final_image = (masked_image * 255).astype(np.uint8)
-
+            # Generate the output file path
             output_path = os.path.join(output_folder, f"enhanced_{file_name}")
+
+            # Save the output image
             imsave(output_path, final_image)
             print(f"Enhanced image saved to: {output_path}")
 
+# Define the input and output folders
 input_folder = 'C:/Users/2179048/Desktop/ridge_ compen/input'
 output_folder = 'C:/Users/2179048/Desktop/ridge_ compen/output'
 
