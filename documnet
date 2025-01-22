@@ -1,13 +1,26 @@
-error                                     Traceback (most recent call last)
-Cell In[2], line 19
-     17 # Display the original and enhanced images side by side
-     18 cv2.imshow('Original Image', img)
----> 19 cv2.imshow('Enhanced Image', out)
-     21 # Wait for a key press to close the window
-     22 cv2.waitKey(0)
+import fingerprint_enhancer  # Import the fingerprint enhancement library
+import cv2  # Import OpenCV for image reading and display
 
-error: OpenCV(4.10.0) :-1: error: (-5:Bad argument) in function 'imshow'
-> Overload resolution failed:
->  - mat data type = bool is not supported
->  - Expected Ptr<cv::cuda::GpuMat> for argument 'mat'
->  - Expected Ptr<cv::UMat> for argument 'mat'
+# Read the input fingerprint image (in grayscale mode)
+img = cv2.imread(
+    'C:/Users/2179048/Downloads/Fingerprint-Enhancement-Python-develop/Fingerprint-Enhancement-Python-develop/images/1.jpg',
+    0,
+)
+
+# Check if the image is loaded successfully
+if img is None:
+    print("Error: Unable to load the image. Please check the file path.")
+else:
+    # Enhance the fingerprint image
+    out = fingerprint_enhancer.enhance_fingerprint(img)
+
+    # Convert the binary image (bool) to uint8 format for OpenCV compatibility
+    out_uint8 = (out * 255).astype('uint8')
+
+    # Display the original and enhanced images side by side
+    cv2.imshow('Original Image', img)
+    cv2.imshow('Enhanced Image', out_uint8)
+
+    # Wait for a key press to close the window
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()  # Close all OpenCV windows
