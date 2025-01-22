@@ -1,22 +1,13 @@
-Why Are Gabor Filters Crucial in CoarseNet's Application?
-Fingerprint Analysis:
+error                                     Traceback (most recent call last)
+Cell In[2], line 19
+     17 # Display the original and enhanced images side by side
+     18 cv2.imshow('Original Image', img)
+---> 19 cv2.imshow('Enhanced Image', out)
+     21 # Wait for a key press to close the window
+     22 cv2.waitKey(0)
 
-Fingerprints consist of intricate ridge and valley patterns, which are highly directional and textured.
-Gabor filters enhance these features by emphasizing the ridges and suppressing noise, leading to clearer segmentation and better orientation estimation.
-Segmentation and Orientation Estimation:
-
-For segmentation tasks, Gabor filters help differentiate foreground (e.g., fingerprint ridges) from the background by enhancing the contrast and texture.
-For orientation estimation, the orientation-sensitive nature of the filters aids in creating precise orientation maps (ori_out_1, ori_out_2), which are essential for applications like minutiae detection.
-Improving Robustness to Variations:
-
-Variations in illumination, contrast, or noise can make feature extraction challenging.
-Gabor filters are designed to be robust to such variations, ensuring that the enhanced features remain consistent across different input images.
-In Summary
-The CoarseNet model uses Gabor filters because they excel at enhancing image features that are critical for tasks like fingerprint analysis and texture segmentation. By leveraging their ability to extract spatial frequency, texture, and orientation information, Gabor filters provide the model with a strong foundation for accurate and efficient feature extraction. This preprocessing step helps the model achieve better performance in downstream tasks, making it a vital component of the overall architecture.
-
-
-
-
-
-
-
+error: OpenCV(4.10.0) :-1: error: (-5:Bad argument) in function 'imshow'
+> Overload resolution failed:
+>  - mat data type = bool is not supported
+>  - Expected Ptr<cv::cuda::GpuMat> for argument 'mat'
+>  - Expected Ptr<cv::UMat> for argument 'mat'
