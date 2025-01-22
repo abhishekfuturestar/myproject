@@ -1,7 +1,23 @@
-import fingerprint_enhancer								# Load the library
-import cv2
+import fingerprint_enhancer  # Import the fingerprint enhancement library
+import cv2  # Import OpenCV for image reading and display
 
-img = cv2.imread('C:/Users/2179048/Downloads/Fingerprint-Enhancement-Python-develop/Fingerprint-Enhancement-Python-develop/images/1.jpg', 0)						# read input image
-out = fingerprint_enhancer.enhance_fingerprint(img)		
-cv2.imshow('enhanced_image', out);		
-cv2.waitKey(0)	
+# Read the input fingerprint image (in grayscale mode)
+img = cv2.imread(
+    'C:/Users/2179048/Downloads/Fingerprint-Enhancement-Python-develop/Fingerprint-Enhancement-Python-develop/images/1.jpg',
+    0,
+)
+
+# Check if the image is loaded successfully
+if img is None:
+    print("Error: Unable to load the image. Please check the file path.")
+else:
+    # Enhance the fingerprint image
+    out = fingerprint_enhancer.enhance_fingerprint(img)
+
+    # Display the original and enhanced images side by side
+    cv2.imshow('Original Image', img)
+    cv2.imshow('Enhanced Image', out)
+
+    # Wait for a key press to close the window
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()  # Close all OpenCV windows
