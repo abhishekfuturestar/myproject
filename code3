@@ -5,8 +5,8 @@ import numpy as np
 from skimage.metrics import structural_similarity as ssim
 
 # Define input and output folders
-input_folder = r'C:/Users/2179048/Desktop/fingerprint/input'
-output_folder = r'C:/Users/2179048/Desktop/fingerprint/input/output'
+input_folder = r'C:/Users/2179048/Desktop/fingerprint/input1'
+output_folder = r'C:/Users/2179048/Desktop/fingerprint/input1/output'
 
 # Create output folder if it doesn't exist
 if not os.path.exists(output_folder):
