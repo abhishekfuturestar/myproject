@@ -31,11 +31,17 @@ for file_name in os.listdir(input_folder):
         # Enhance the fingerprint
         enhanced = fingerprint_enhancer.enhance_fingerprint(img)
 
+        # Check min and max values of the enhanced image before scaling
+        print(f"Min value of enhanced: {np.min(enhanced)}, Max value of enhanced: {np.max(enhanced)}")
+
+        # Ensure enhanced image is between 0 and 1
+        enhanced = np.clip(enhanced, 0, 1)
+
         # Convert the enhanced image to uint8 (range 0-255)
         enhanced_uint8 = (enhanced * 255).astype('uint8')
 
         # Calculate SSIM between the original and enhanced images
-        score, _ = ssim(img, enhanced_uint8, full=True)
+        score, _ = ssim(img, enhanced_uint8, full=True, data_range=255)
 
         # Save the SSIM score
         ssim_scores.append((file_name, score))
