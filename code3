@@ -44,8 +44,9 @@ for file_name in os.listdir(input_folder):
         font = cv2.FONT_HERSHEY_SIMPLEX
         score_text = f"SSIM: {score:.4f}"
 
-        # Choose a color for the SSIM score text (Red for visibility)
-        color = (0, 255, 255)  # Yellow (BGR format)
+        # Choose a color for the SSIM score text (we'll cycle through different colors)
+        # Red (BGR format)
+        color = (0, 0, 255)  # Red (BGR format)
 
         # Place SSIM text on the original image (left side)
         img_with_text = cv2.putText(img.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
