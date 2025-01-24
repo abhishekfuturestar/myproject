@@ -40,12 +40,27 @@ for file_name in os.listdir(input_folder):
         # Save the SSIM score
         ssim_scores.append((file_name, score))
 
+        # Add SSIM score as text on both the original and enhanced images
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        score_text = f"SSIM: {score:.4f}"
+
+        # Place SSIM text on the original image (left side)
+        img_with_text = cv2.putText(img.copy(), score_text, (10, 30), font, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+
+        # Place SSIM text on the enhanced image (right side)
+        enhanced_with_text = cv2.putText(enhanced_uint8.copy(), score_text, (10, 30), font, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+
         # Concatenate original and enhanced images side by side
-        combined_image = np.hstack((img, enhanced_uint8))
+        combined_image = np.hstack((img_with_text, enhanced_with_text))
 
         # Save the combined image to the output folder
         output_path = os.path.join(output_folder, f"combined_{file_name}")
         cv2.imwrite(output_path, combined_image)
+
+        # Display the images with SSIM score text
+        cv2.imshow(f"Original (left) and Enhanced (right) for {file_name}", combined_image)
+        cv2.waitKey(0)  # Wait for a key press to move to the next image
+        cv2.destroyAllWindows()  # Close the image window
 
         print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
 
