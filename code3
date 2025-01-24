@@ -6,7 +6,7 @@ from skimage.metrics import structural_similarity as ssim
 
 # Define input and output folders
 input_folder = r'C:/Users/2179048/Desktop/fingerprint/input1'
-output_folder = r'C:/Users/2179048/Desktop/fingerprint/input1/output'
+output_folder = r'C:/Users/2179048/Desktop/fingerprint/input1/output_result'
 
 # Create output folder if it doesn't exist
 if not os.path.exists(output_folder):
@@ -44,23 +44,25 @@ for file_name in os.listdir(input_folder):
         font = cv2.FONT_HERSHEY_SIMPLEX
         score_text = f"SSIM: {score:.4f}"
 
+        # Choose a color for the SSIM score text (Red for visibility)
+        color = (0, 255, 255)  # Yellow (BGR format)
+
         # Place SSIM text on the original image (left side)
-        img_with_text = cv2.putText(img.copy(), score_text, (10, 30), font, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+        img_with_text = cv2.putText(img.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
 
         # Place SSIM text on the enhanced image (right side)
-        enhanced_with_text = cv2.putText(enhanced_uint8.copy(), score_text, (10, 30), font, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+        enhanced_with_text = cv2.putText(enhanced_uint8.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
+
+        # Convert grayscale images to BGR for concatenation
+        img_bgr = cv2.cvtColor(img_with_text, cv2.COLOR_GRAY2BGR)
+        enhanced_bgr = cv2.cvtColor(enhanced_with_text, cv2.COLOR_GRAY2BGR)
 
         # Concatenate original and enhanced images side by side
-        combined_image = np.hstack((img_with_text, enhanced_with_text))
+        combined_image = np.hstack((img_bgr, enhanced_bgr))
 
         # Save the combined image to the output folder
         output_path = os.path.join(output_folder, f"combined_{file_name}")
         cv2.imwrite(output_path, combined_image)
-
-        # Display the images with SSIM score text
-        cv2.imshow(f"Original (left) and Enhanced (right) for {file_name}", combined_image)
-        cv2.waitKey(0)  # Wait for a key press to move to the next image
-        cv2.destroyAllWindows()  # Close the image window
 
         print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
 
