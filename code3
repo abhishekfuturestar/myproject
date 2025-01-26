@@ -31,11 +31,14 @@ for file_name in os.listdir(input_folder):
         # Enhance the fingerprint
         enhanced = fingerprint_enhancer.enhance_fingerprint(img)
 
-        # Ensure both images are in the range [0, 255] for SSIM calculation
-        img_uint8 = np.uint8(img)  # No scaling needed as it should be in [0, 255]
-        enhanced_uint8 = np.uint8(enhanced * 255)  # Scale to [0, 255] if it's [0, 1]
+        # Ensure the enhanced image is in range [0, 255] before converting to uint8
+        enhanced = np.clip(enhanced, 0, 1)  # Clip values to [0, 1]
+        enhanced_uint8 = (enhanced * 255).astype('uint8')  # Scale to [0, 255] and convert to uint8
 
-        # Calculate SSIM between the original and enhanced images (using data_range=255 for uint8 images)
+        # Ensure input image is in uint8 format (range [0, 255])
+        img_uint8 = np.uint8(img)  # img is already in range [0, 255]
+
+        # Calculate SSIM between the original and enhanced images
         score, _ = ssim(img_uint8, enhanced_uint8, full=True, data_range=255)
 
         # Save the SSIM score
