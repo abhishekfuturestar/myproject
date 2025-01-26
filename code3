@@ -31,12 +31,12 @@ for file_name in os.listdir(input_folder):
         # Enhance the fingerprint
         enhanced = fingerprint_enhancer.enhance_fingerprint(img)
 
-        # Ensure both images are in the range [0, 1]
-        img_float = np.float32(img) / 255.0
-        enhanced_float = np.float32(enhanced) / 255.0
+        # Ensure both images are in the range [0, 255] for SSIM calculation
+        img_uint8 = np.uint8(img)  # No scaling needed as it should be in [0, 255]
+        enhanced_uint8 = np.uint8(enhanced * 255)  # Scale to [0, 255] if it's [0, 1]
 
-        # Calculate SSIM between the original and enhanced images
-        score, _ = ssim(img_float, enhanced_float, full=True, data_range=1)
+        # Calculate SSIM between the original and enhanced images (using data_range=255 for uint8 images)
+        score, _ = ssim(img_uint8, enhanced_uint8, full=True, data_range=255)
 
         # Save the SSIM score
         ssim_scores.append((file_name, score))
@@ -49,8 +49,8 @@ for file_name in os.listdir(input_folder):
         color = (0, 0, 255)  # Red in BGR format
 
         # Convert grayscale images to BGR before adding colored text
-        img_bgr = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        enhanced_bgr = cv2.cvtColor((enhanced_float * 255).astype('uint8'), cv2.COLOR_GRAY2BGR)
+        img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_GRAY2BGR)
+        enhanced_bgr = cv2.cvtColor(enhanced_uint8, cv2.COLOR_GRAY2BGR)
 
         # Place SSIM text on the original image (left side)
         img_with_text = cv2.putText(img_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
