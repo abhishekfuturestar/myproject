@@ -1,41 +1,77 @@
-SSIM Scores for all images:
-PG000701.bmp: SSIM = 0.5386
-PG000714.bmp: SSIM = 0.2179
-PG001090.bmp: SSIM = 0.8250
-PG001427.bmp: SSIM = 0.5805
-PG001728.bmp: SSIM = 0.7712
-PG001891.bmp: SSIM = 0.7719
-PG002400.bmp: SSIM = 0.7875
-PG002802.bmp: SSIM = 0.7243
-PG004147.bmp: SSIM = 0.3695
-PG004318.bmp: SSIM = 0.4791
-PG23111847.bmp: SSIM = 0.4205
-PG23122478.bmp: SSIM = 0.3922
-PG23132203.bmp: SSIM = 0.4370
-PG23133168.bmp: SSIM = 0.4721
-PG23136495.bmp: SSIM = 0.3839
-PG23136876.bmp: SSIM = 0.3715
-PG23136965.bmp: SSIM = 0.5114
-PG23160671.bmp: SSIM = 0.4041
-PG23160742.bmp: SSIM = 0.3518
-PG23161143.bmp: SSIM = 0.3269
-PG23162253.bmp: SSIM = 0.4451
-PG23169570.bmp: SSIM = 0.3392
-PG23170667.bmp: SSIM = 0.4892
-PG23172029.bmp: SSIM = 0.4385
-PG23172602.bmp: SSIM = 0.4012
-PG23177221.bmp: SSIM = 0.4692
-PG23177438.bmp: SSIM = 0.4591
-PG23213038.bmp: SSIM = 0.4059
-PG24000411.bmp: SSIM = 0.3661
-PG24001343.bmp: SSIM = 0.3961
-PG24001864.bmp: SSIM = 0.3688
-PG24002375.bmp: SSIM = 0.3996
-PG24003090.bmp: SSIM = 0.2795
-PG24006257.bmp: SSIM = 0.3388
-PG24006719.bmp: SSIM = 0.3749
-PG24007732.bmp: SSIM = 0.3813
-PG24007788.bmp: SSIM = 0.4610
-PG24007863.bmp: SSIM = 0.5015
-PG24007974.bmp: SSIM = 0.4486
-Processing complete. All combined images saved.
+import fingerprint_enhancer
+import cv2
+import os
+import numpy as np
+from skimage.metrics import structural_similarity as ssim
+
+# Define input and output folders
+input_folder = r'C:/Users/2179048/Desktop/fingerprint/input7'
+output_folder = r'C:/Users/2179048/Desktop/fingerprint/input7/output'
+
+# Create output folder if it doesn't exist
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
+
+# Initialize a list to store SSIM scores
+ssim_scores = []
+
+# Loop through all files in the input folder
+for file_name in os.listdir(input_folder):
+    input_path = os.path.join(input_folder, file_name)
+
+    # Check if the file is an image
+    if os.path.isfile(input_path):
+        # Read the image in grayscale
+        img = cv2.imread(input_path, 0)
+
+        if img is None:
+            print(f"Error: Unable to load the image {file_name}. Skipping.")
+            continue
+
+        # Enhance the fingerprint
+        enhanced = fingerprint_enhancer.enhance_fingerprint(img)
+
+        # Check the image ranges
+        print(f"Input image min: {np.min(img)}, max: {np.max(img)}")
+        print(f"Enhanced image min: {np.min(enhanced)}, max: {np.max(enhanced)}")
+
+        # Ensure both images are in the range [0, 255] for SSIM calculation
+        img_uint8 = np.uint8(img)  # No scaling needed as it should be in [0, 255]
+        enhanced_uint8 = np.uint8(np.clip(enhanced * 255, 0, 255))  # Ensure scaling to [0, 255]
+
+        # Calculate SSIM between the original and enhanced images (using data_range=255 for uint8 images)
+        score, _ = ssim(img_uint8, enhanced_uint8, full=True, data_range=255)
+
+        # Save the SSIM score
+        ssim_scores.append((file_name, score))
+
+        # Add SSIM score as text on the combined image (only once)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        score_text = f"SSIM: {score:.4f}"
+
+        # Choose a color for the SSIM score text (Red color)
+        color = (0, 0, 255)  # Red in BGR format
+
+        # Convert grayscale images to BGR before adding colored text
+        img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_GRAY2BGR)
+        enhanced_bgr = cv2.cvtColor(enhanced_uint8, cv2.COLOR_GRAY2BGR)
+
+        # Concatenate original and enhanced images side by side
+        combined_image = np.hstack((img_bgr, enhanced_bgr))
+
+        # Add SSIM score text on the combined image (either at the top or bottom)
+        combined_image_with_text = combined_image.copy()
+        cv2.putText(combined_image_with_text, score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
+
+        # Save the combined image to the output folder
+        output_path = os.path.join(output_folder, f"combined_{file_name}")
+        cv2.imwrite(output_path, combined_image_with_text)
+
+        print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
+
+# Print SSIM scores for all images
+print("\nSSIM Scores for all images:")
+for file_name, score in ssim_scores:
+    print(f"{file_name}: SSIM = {score:.4f}")
+
+print("Processing complete. All combined images saved.")
