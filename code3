@@ -28,8 +28,12 @@ for file_name in os.listdir(input_folder):
             print(f"Error: Unable to load the image {file_name}. Skipping.")
             continue
 
-        # Enhance the fingerprint
+        # Enhance the fingerprint using the fingerprint enhancer
         enhanced = fingerprint_enhancer.enhance_fingerprint(img)
+
+        # DEBUG: Check if the images are being enhanced correctly
+        print(f"Original Image Max: {np.max(img)} Min: {np.min(img)}")
+        print(f"Enhanced Image Max: {np.max(enhanced)} Min: {np.min(enhanced)}")
 
         # Ensure both images are in the range [0, 255] for SSIM calculation
         img_uint8 = np.uint8(img)  # img should already be in [0, 255]
@@ -37,12 +41,18 @@ for file_name in os.listdir(input_folder):
         # Scale the enhanced image if it's in the [0, 1] range
         enhanced_uint8 = np.uint8(np.clip(enhanced * 255, 0, 255))  # Ensure scaling to [0, 255]
 
+        # DEBUG: Check after scaling the enhanced image
+        print(f"Scaled Enhanced Image Max: {np.max(enhanced_uint8)} Min: {np.min(enhanced_uint8)}")
+
         # Calculate SSIM between the original and enhanced images (using data_range=255 for uint8 images)
         score, _ = ssim(img_uint8, enhanced_uint8, full=True, data_range=255)
 
-        # Check if SSIM is negative, and set it to 0 if it's unexpected
-        if score < 0:
-            print(f"Warning: Negative SSIM score detected for {file_name}. Setting SSIM score to 0.")
+        # DEBUG: Output the SSIM score and its map
+        print(f"SSIM Score for {file_name}: {score:.4f}")
+
+        # If SSIM score is 0 or negative, we handle this case:
+        if score <= 0:
+            print(f"Warning: SSIM score for {file_name} is very low or negative. Setting it to 0.")
             score = 0.0
 
         # Save the SSIM score
@@ -59,9 +69,11 @@ for file_name in os.listdir(input_folder):
         img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_GRAY2BGR)
         enhanced_bgr = cv2.cvtColor(enhanced_uint8, cv2.COLOR_GRAY2BGR)
 
-        # Place SSIM text on both the original and enhanced image (we'll place text only on the original image)
+        # Place SSIM text on the original image (left side)
         img_with_text = cv2.putText(img_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
-        enhanced_with_text = enhanced_bgr.copy()  # Don't add the SSIM text here
+
+        # No SSIM text on the enhanced image, only on the left one
+        enhanced_with_text = enhanced_bgr.copy()
 
         # Concatenate original and enhanced images side by side
         combined_image = np.hstack((img_with_text, enhanced_with_text))
