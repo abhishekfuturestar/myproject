@@ -33,7 +33,7 @@ for file_name in os.listdir(input_folder):
 
         # Ensure both images are in the range [0, 255] for SSIM calculation
         img_uint8 = np.uint8(img)  # No scaling needed as it should be in [0, 255]
-        enhanced_uint8 = np.uint8(enhanced * 255)  # Scale to [0, 255] if it's [0, 1]
+        enhanced_uint8 = np.uint8(np.clip(enhanced * 255, 0, 255))  # Ensure scaling to [0, 255]
 
         # Calculate SSIM between the original and enhanced images (using data_range=255 for uint8 images)
         score, _ = ssim(img_uint8, enhanced_uint8, full=True, data_range=255)
@@ -41,7 +41,7 @@ for file_name in os.listdir(input_folder):
         # Save the SSIM score
         ssim_scores.append((file_name, score))
 
-        # Add SSIM score as text on both the original and enhanced images
+        # Add SSIM score as text on the combined image (only once)
         font = cv2.FONT_HERSHEY_SIMPLEX
         score_text = f"SSIM: {score:.4f}"
 
@@ -52,18 +52,16 @@ for file_name in os.listdir(input_folder):
         img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_GRAY2BGR)
         enhanced_bgr = cv2.cvtColor(enhanced_uint8, cv2.COLOR_GRAY2BGR)
 
-        # Place SSIM text on the original image (left side)
-        img_with_text = cv2.putText(img_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
-
-        # Place SSIM text on the enhanced image (right side)
-        enhanced_with_text = cv2.putText(enhanced_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
-
         # Concatenate original and enhanced images side by side
-        combined_image = np.hstack((img_with_text, enhanced_with_text))
+        combined_image = np.hstack((img_bgr, enhanced_bgr))
+
+        # Add SSIM score text on the combined image (either at the top or bottom)
+        combined_image_with_text = combined_image.copy()
+        cv2.putText(combined_image_with_text, score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
 
         # Save the combined image to the output folder
         output_path = os.path.join(output_folder, f"combined_{file_name}")
-        cv2.imwrite(output_path, combined_image)
+        cv2.imwrite(output_path, combined_image_with_text)
 
         print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
 
