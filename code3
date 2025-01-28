@@ -1,82 +1,56 @@
-import fingerprint_enhancer
-import cv2
-import os
-import numpy as np
-from skimage.metrics import structural_similarity as ssim
-
-# Define input and output folders
-input_folder = r'C:/Users/2179048/Desktop/fingerprint/input7'
-output_folder = r'C:/Users/2179048/Desktop/fingerprint/input7/output'
-
-# Create output folder if it doesn't exist
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
-
-# Initialize a list to store SSIM scores
-ssim_scores = []
-
-# Loop through all files in the input folder
-for file_name in os.listdir(input_folder):
-    input_path = os.path.join(input_folder, file_name)
-
-    # Check if the file is an image
-    if os.path.isfile(input_path):
-        # Read the image in grayscale
-        img = cv2.imread(input_path, 0)
-
-        if img is None:
-            print(f"Error: Unable to load the image {file_name}. Skipping.")
-            continue
-
-        # Enhance the fingerprint using the fingerprint enhancer
-        enhanced = fingerprint_enhancer.enhance_fingerprint(img)
-
-        # Ensure both images are in the range [0, 255] for SSIM calculation
-        img_uint8 = np.uint8(img)  # Input image is already in [0, 255]
-        
-        # Scale the enhanced image to [0, 255] if it's in the range [0, 1]
-        enhanced_uint8 = np.uint8(np.clip(enhanced * 255, 0, 255))  # Ensure scaling to [0, 255]
-
-        # Calculate SSIM between the original and enhanced images (using data_range=255 for uint8 images)
-        score, _ = ssim(img_uint8, enhanced_uint8, full=True, data_range=255)
-
-        # If SSIM score is 0 or negative, we handle this case:
-        if score <= 0:
+its printing this thing what does it ,means :
             print(f"Warning: SSIM score for {file_name} is very low or negative. Setting it to 0.")
             score = 0.0
+ChatGPT said:
+ChatGPT
+The message:
 
-        # Save the SSIM score
-        ssim_scores.append((file_name, score))
+python
+Copy
+print(f"Warning: SSIM score for {file_name} is very low or negative. Setting it to 0.")
+score = 0.0
+is being printed when the SSIM score between your input image and the enhanced image is either negative or extremely low. This happens when the two images being compared are structurally very different. The SSIM score ranges from -1 to 1:
 
-        # Add SSIM score as text on the original image
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        score_text = f"SSIM: {score:.4f}"
+SSIM = 1: The two images are identical (or extremely similar in terms of structure and content).
+SSIM = 0: The two images have no structural similarity, meaning they are completely different in terms of their structure or patterns.
+SSIM < 0: A negative SSIM score suggests the images are even more dissimilar than when SSIM = 0, which typically happens if one of the images is a completely black/blank image or if the contrast between the images is vastly different.
+Why This Happens:
+SSIM score near 0: A score close to 0 means the two images are vastly different. This could be due to the enhancement method altering the image too much (e.g., changing its structure or removing key features), or if the images are inherently quite different.
+Negative SSIM score: A negative SSIM score is highly unusual unless the image data is corrupt or if one of the images has extreme distortions like being inverted or having negative pixel values, which can happen in certain enhancement algorithms.
+In the code provided, I included this warning and forced the SSIM score to 0 in cases where the SSIM score is negative or very low. This is because:
 
-        # Choose a color for the SSIM score text (Red color)
-        color = (0, 0, 255)  # Red in BGR format
+Negative SSIM values don't make sense in normal image comparison tasks (in most cases, SSIM ranges from 0 to 1, where 0 means completely dissimilar, and 1 means identical).
+Zero SSIM means the images are entirely different, which may be a result of the enhancement method being too aggressive or not having enough similarity with the original input image.
+What this means practically:
+For extremely low or negative SSIM values: It indicates that the fingerprint enhancement method (or the images being compared) may be too different from each other. Perhaps the enhancement is so aggressive that the structures in the images no longer resemble each other.
+How to proceed:
+Look at the Images: Check the visual output of the original (input_image) and enhanced (enhanced_image) images. If they look drastically different, the SSIM score will naturally be low. Ideally, the enhancement method should improve or preserve key features of the original image (not distort them too much).
 
-        # Convert grayscale images to BGR before adding colored text
-        img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_GRAY2BGR)
-        enhanced_bgr = cv2.cvtColor(enhanced_uint8, cv2.COLOR_GRAY2BGR)
+Adjust Enhancement Method: If the enhancement method is significantly altering the image structure (e.g., applying too much contrast or distortion), try adjusting it to focus more on improving the fingerprint details without changing the overall structure of the image too much.
 
-        # Place SSIM text on the original image (left side)
-        img_with_text = cv2.putText(img_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
+Try to Fix Negative SSIM: To ensure the SSIM score stays within reasonable bounds, we are setting it to 0.0 when it is too negative or low, as this is a common convention to indicate a lack of similarity in image quality assessment. You can skip this part and check the original SSIM scores as well to understand where the discrepancy is happening.
 
-        # Place SSIM text only on the original image
-        enhanced_with_text = enhanced_bgr.copy()
+Example of Checking SSIM for Two Images:
+python
+Copy
+import cv2
+from skimage.metrics import structural_similarity as ssim
 
-        # Concatenate original and enhanced images side by side
-        combined_image = np.hstack((img_with_text, enhanced_with_text))
+# Read two images (make sure they are grayscale)
+input_image = cv2.imread('input_image_path', 0)  # Read as grayscale
+enhanced_image = cv2.imread('enhanced_image_path', 0)
 
-        # Save the combined image to the output folder
-        output_path = os.path.join(output_folder, f"combined_{file_name}")
-        cv2.imwrite(output_path, combined_image)
+# Ensure images are in the range [0, 255]
+input_image = cv2.normalize(input_image, None, 0, 255, cv2.NORM_MINMAX)
+enhanced_image = cv2.normalize(enhanced_image, None, 0, 255, cv2.NORM_MINMAX)
 
-        print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
+# Calculate SSIM
+score, _ = ssim(input_image, enhanced_image, full=True, data_range=255)
 
-# Print SSIM scores for all images
-print("\nSSIM Scores for all images:")
-for file_name, score in ssim_scores:
-    print(f"{file_name}: SSIM = {score:.4f}")
+print(f"SSIM: {score:.4f}")
+Conclusion:
+The warning message is a safeguard to notify you that the SSIM score you received doesn't make sense (either negative or very low) and has been set to 0 for further processing. You should inspect the images themselves and understand why their structure might differ so much that the SSIM score is extremely low. By adjusting the enhancement method or analyzing the images more carefully, you can ensure the SSIM score gives a meaningful comparison.
 
-print("Processing complete. All combined images saved.")
+Let me know if you want further assistance with any specific part!
+
+
