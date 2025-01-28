@@ -56,15 +56,17 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
             final_image_bgr = cv2.cvtColor(final_image, cv2.COLOR_GRAY2BGR)
 
-            # Concatenate the images vertically (one on top of the other)
-            combined_image = np.vstack((image_bgr, final_image_bgr))
+            # Concatenate the images side by side (left and right)
+            combined_image = np.hstack((image_bgr, final_image_bgr))
 
             # Add the SSIM score text at the top or bottom of the combined image
-            cv2.putText(combined_image, score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
+            # Adding the SSIM text at the top (adjust vertical position)
+            combined_image_with_text = combined_image.copy()
+            cv2.putText(combined_image_with_text, score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
 
             # Save the combined image to the output folder
             output_path = os.path.join(output_folder, f"combined_{file_name}")
-            imsave(output_path, combined_image)
+            imsave(output_path, combined_image_with_text)
             print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
 
     # Print SSIM scores for all images
