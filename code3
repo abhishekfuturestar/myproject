@@ -43,11 +43,11 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             # Save the SSIM score
             ssim_scores.append((file_name, score))
 
-            # Add SSIM score as text on both the original and enhanced images
+            # Add SSIM score as text on the combined image (at the top or bottom)
             font = cv2.FONT_HERSHEY_SIMPLEX
             score_text = f"SSIM: {score:.4f}"
 
-            # Try different colors: Red (BGR), Orange, Yellow
+            # Choose a color for the SSIM text (Red color)
             color = (0, 0, 255)  # Red in BGR
             # color = (0, 165, 255)  # Orange in BGR
             # color = (0, 255, 255)  # Yellow in BGR
@@ -56,12 +56,11 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
             final_image_bgr = cv2.cvtColor(final_image, cv2.COLOR_GRAY2BGR)
 
-            # Ensure SSIM text is added in the chosen color
-            image_with_text = cv2.putText(image_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
-            enhanced_with_text = cv2.putText(final_image_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
+            # Concatenate the images vertically (one on top of the other)
+            combined_image = np.vstack((image_bgr, final_image_bgr))
 
-            # Concatenate original and enhanced images side by side
-            combined_image = np.hstack((image_with_text, enhanced_with_text))
+            # Add the SSIM score text at the top or bottom of the combined image
+            cv2.putText(combined_image, score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
 
             # Save the combined image to the output folder
             output_path = os.path.join(output_folder, f"combined_{file_name}")
