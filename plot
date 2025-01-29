@@ -37,13 +37,13 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
             # Convert the result back to [0, 255] range
             final_image = (combined_image * 255).astype(np.uint8)
 
-            # Apply the bitwise NOT operation on the enhanced (final) image
+            # Apply the bitwise NOT operation on the enhanced (final) image (for visualization only)
             bitwise_image = cv2.bitwise_not(final_image)
 
-            # Calculate SSIM between the original image and the bitwise-not of the enhanced image
-            score, _ = ssim(image, bitwise_image, full=True, data_range=255)
+            # Calculate SSIM between the original image and the enhanced image (without applying bitwise NOT)
+            score, _ = ssim(image, final_image, full=True, data_range=255)
 
-            # Save the SSIM score for later use
+            # Save the SSIM score
             ssim_scores.append((file_name, score))
 
             # Add SSIM score as text on the combined image
