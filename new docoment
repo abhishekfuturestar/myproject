@@ -1,77 +1,82 @@
-import fingerprint_enhancer
 import cv2
-import os
 import numpy as np
+from skimage.filters import meijering
+from skimage.io import imsave
 from skimage.metrics import structural_similarity as ssim
+import os
 
-# Define input and output folders
-input_folder = r'C:/Users/2179048/Desktop/fingerprint/input7'
-output_folder = r'C:/Users/2179048/Desktop/fingerprint/input7/output'
+def apply_ridge_compensation_filter(input_folder, output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
-# Create output folder if it doesn't exist
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
+    # List to store SSIM scores
+    ssim_scores = []
 
-# Initialize a list to store SSIM scores
-ssim_scores = []
+    for file_name in os.listdir(input_folder):
+        input_path = os.path.join(input_folder, file_name)
 
-# Loop through all files in the input folder
-for file_name in os.listdir(input_folder):
-    input_path = os.path.join(input_folder, file_name)
+        if os.path.isfile(input_path):
+            # Read the image (grayscale)
+            image = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
+            if image is None:
+                print(f"Error: Unable to read the image from {input_path}")
+                continue
 
-    # Check if the file is an image
-    if os.path.isfile(input_path):
-        # Read the image in grayscale
-        img = cv2.imread(input_path, 0)
+            # Normalize the image to range [0, 1]
+            normalized_image = image / 255.0
 
-        if img is None:
-            print(f"Error: Unable to load the image {file_name}. Skipping.")
-            continue
+            # Create a mask for the fingerprint region (non-white areas)
+            mask = (normalized_image < 1).astype(np.uint8)
 
-        # Enhance the fingerprint using the fingerprint enhancer
-        enhanced = fingerprint_enhancer.enhance_fingerprint(img)
+            # Apply the Meijering filter to the entire image
+            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=False)
 
-        # Apply bitwise NOT on the enhanced image
-        enhanced_bitwise = cv2.bitwise_not(np.uint8(enhanced * 255))  # Apply bitwise NOT
+            # Preserve the white background and only enhance the fingerprint
+            combined_image = np.where(mask == 1, enhanced_image, 1.0)  # Keep the background white (value 1.0)
 
-        # Ensure both images are in the range [0, 255] for SSIM calculation
-        img_uint8 = np.uint8(img)  # No scaling needed as it should be in [0, 255]
-        enhanced_bitwise_uint8 = np.uint8(enhanced_bitwise)  # Ensure it's in uint8 format
+            # Convert the result back to [0, 255] range
+            final_image = (combined_image * 255).astype(np.uint8)
 
-        # Calculate SSIM between the original and enhanced (after bitwise NOT) images (using data_range=255 for uint8 images)
-        score, _ = ssim(img_uint8, enhanced_bitwise_uint8, full=True, data_range=255)
+            # Calculate SSIM between the original and enhanced images
+            score, _ = ssim(image, final_image, full=True, data_range=255)
 
-        # Save the SSIM score
-        ssim_scores.append((file_name, score))
+            # Save the SSIM score
+            ssim_scores.append((file_name, score))
 
-        # Add SSIM score as text only once, on the combined image
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        score_text = f"SSIM: {score:.4f}"
+            # Add SSIM score as text on both the original and enhanced images
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            score_text = f"SSIM: {score:.4f}"
 
-        # Choose a color for the SSIM score text (Red color)
-        color = (0, 0, 255)  # Red in BGR format
+            # Choose a color for the SSIM score text (Red color)
+            color = (0, 0, 255)  # Red in BGR format
 
-        # Convert grayscale images to BGR before adding colored text
-        img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_GRAY2BGR)
-        enhanced_bitwise_bgr = cv2.cvtColor(enhanced_bitwise_uint8, cv2.COLOR_GRAY2BGR)
+            # Convert grayscale images to BGR before adding colored text
+            image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+            final_image_bgr = cv2.cvtColor(final_image, cv2.COLOR_GRAY2BGR)
 
-        # Concatenate original and enhanced images side by side
-        combined_image = np.hstack((img_bgr, enhanced_bitwise_bgr))
+            # Place SSIM text on the original image (left side)
+            image_with_text = cv2.putText(image_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
 
-        # Place SSIM text on the combined image (at the top of the image)
-        combined_image_with_text = cv2.putText(
-            combined_image, score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA
-        )
+            # Place SSIM text on the enhanced image (right side)
+            enhanced_with_text = cv2.putText(final_image_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
 
-        # Save the combined image to the output folder
-        output_path = os.path.join(output_folder, f"combined_{file_name}")
-        cv2.imwrite(output_path, combined_image_with_text)
+            # Concatenate original and enhanced images side by side
+            combined_image = np.hstack((image_with_text, enhanced_with_text))
 
-        print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
+            # Save the combined image to the output folder
+            output_path = os.path.join(output_folder, f"combined_{file_name}")
+            imsave(output_path, combined_image)
+            print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
 
-# Print SSIM scores for all images
-print("\nSSIM Scores for all images:")
-for file_name, score in ssim_scores:
-    print(f"{file_name}: SSIM = {score:.4f}")
+    # Print SSIM scores for all images
+    print("\nSSIM Scores for all images:")
+    for file_name, score in ssim_scores:
+        print(f"{file_name}: SSIM = {score:.4f}")
 
-print("Processing complete. All combined images saved.")
+    print("Processing complete. All combined images saved.")
+
+# Define the input and output folders
+input_folder = 'C:/Users/2179048/Desktop/Ridge_Comp_Mejering/input'
+output_folder = 'C:/Users/2179048/Desktop/Ridge_Comp_Mejering/output'
+
+apply_ridge_compensation_filter(input_folder, output_folder)
