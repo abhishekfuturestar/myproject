@@ -44,7 +44,7 @@ for file_name in os.listdir(input_folder):
         # Save the SSIM score
         ssim_scores.append((file_name, score))
 
-        # Add SSIM score as text on the combined image
+        # Add SSIM score as text only once, on the combined image
         font = cv2.FONT_HERSHEY_SIMPLEX
         score_text = f"SSIM: {score:.4f}"
 
