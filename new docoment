@@ -9,7 +9,7 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    # List to store SSIM scores
+  
     ssim_scores = []
 
     for file_name in os.listdir(input_folder):
@@ -22,64 +22,60 @@ def apply_ridge_compensation_filter(input_folder, output_folder):
                 print(f"Error: Unable to read the image from {input_path}")
                 continue
 
-            # Normalize the image to range [0, 1]
+        
             normalized_image = image / 255.0
 
-            # Create a mask for the fingerprint region (non-white areas)
+         
             mask = (normalized_image < 1).astype(np.uint8)
 
-            # Apply the Meijering filter to the entire image
+        
             enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=False)
 
-            # Preserve the white background and only enhance the fingerprint
-            combined_image = np.where(mask == 1, enhanced_image, 1.0)  # Keep the background white (value 1.0)
+        
+            combined_image = np.where(mask == 1, enhanced_image, 1.0) 
 
-            # Convert the result back to [0, 255] range
+
             final_image = (combined_image * 255).astype(np.uint8)
 
-            # Apply cv2.bitwise_not() to the final image after enhancement
-            bitwise_not_image = cv2.bitwise_not(final_image)
-
-            # Calculate SSIM between the original and the image after bitwise_not
-            score, _ = ssim(image, bitwise_not_image, full=True, data_range=255)
+        
+            score, _ = ssim(image, final_image, full=True, data_range=255)
 
             # Save the SSIM score
             ssim_scores.append((file_name, score))
 
-            # Add SSIM score as text on both the original and bitwise_not images
+            
             font = cv2.FONT_HERSHEY_SIMPLEX
             score_text = f"SSIM: {score:.4f}"
 
-            # Choose a color for the SSIM score text (Red color)
-            color = (0, 0, 255)  # Red in BGR format
+            color = (0, 0, 255)  # Red in BGR
+            # color = (0, 165, 255)  # Orange in BGR
+            # color = (0, 255, 255)  # Yellow in BGR
 
-            # Convert grayscale images to BGR before adding colored text
+    
             image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-            bitwise_not_bgr = cv2.cvtColor(bitwise_not_image, cv2.COLOR_GRAY2BGR)
+            final_image_bgr = cv2.cvtColor(final_image, cv2.COLOR_GRAY2BGR)
 
-            # Place SSIM text on the original image (left side)
-            image_with_text = cv2.putText(image_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
+    
+            combined_image = np.hstack((image_bgr, final_image_bgr))
 
-            # Place SSIM text on the bitwise_not image (right side)
-            bitwise_not_with_text = cv2.putText(bitwise_not_bgr.copy(), score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
+        
+            combined_image_with_text = combined_image.copy()
+            cv2.putText(combined_image_with_text, score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA)
 
-            # Concatenate original and bitwise_not images side by side
-            combined_image = np.hstack((image_with_text, bitwise_not_with_text))
-
-            # Save the combined image to the output folder
+        
             output_path = os.path.join(output_folder, f"combined_{file_name}")
-            imsave(output_path, combined_image)
+            imsave(output_path, combined_image_with_text)
             print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
 
-    # Print SSIM scores for all images
+    
     print("\nSSIM Scores for all images:")
     for file_name, score in ssim_scores:
         print(f"{file_name}: SSIM = {score:.4f}")
 
     print("Processing complete. All combined images saved.")
 
-# Define the input and output folders
+
 input_folder = 'C:/Users/2179048/Desktop/Ridge_Comp_Mejering/input'
-output_folder = 'C:/Users/2179048/Desktop/Ridge_Comp_Mejering/output'
+output_folder = 'C:/Users/2179048/Desktop/Ridge_Comp_Mejering/final'
 
 apply_ridge_compensation_filter(input_folder, output_folder)
