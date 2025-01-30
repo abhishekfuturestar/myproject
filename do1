@@ -1,22 +1,81 @@
+import cv2
+import numpy as np
+from skimage.filters import meijering
+from skimage.io import imsave
+from skimage.metrics import structural_similarity as ssim
+import os
 
-SSIM Scores for all images:
-PG000701.bmp: SSIM = -0.4128
-PG000714.bmp: SSIM = -0.0995
-PG001090.bmp: SSIM = -0.4822
-PG001427.bmp: SSIM = -0.3644
-PG001728.bmp: SSIM = -0.5133
-PG001891.bmp: SSIM = -0.5159
-PG002400.bmp: SSIM = -0.5478
-PG002802.bmp: SSIM = -0.3789
-PG004147.bmp: SSIM = -0.2105
+def apply_ridge_compensation_filter(input_folder, output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    ssim_scores = []
+
+    for file_name in os.listdir(input_folder):
+        input_path = os.path.join(input_folder, file_name)
+
+        if os.path.isfile(input_path):
+            image = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
+            if image is None:
+                print(f"Error: Unable to read the image from {input_path}")
+                continue
+            normalized_image = image / 255.0
 
 
-SSIM Scores for all images:
-PG000701.bmp: SSIM = -0.4128
-PG000714.bmp: SSIM = -0.0995
-PG001090.bmp: SSIM = -0.4822
-PG001427.bmp: SSIM = -0.3644
-PG001728.bmp: SSIM = -0.5133
-PG001891.bmp: SSIM = -0.5159
-PG002400.bmp: SSIM = -0.5478
-PG002802.bmp: SSIM = -0.3789
+            mask = (normalized_image < 1).astype(np.uint8)
+
+        
+            enhanced_image = meijering(normalized_image, sigmas=range(1, 5), black_ridges=False)
+
+            
+            combined_image = np.where(mask == 1, enhanced_image, 1.0)  # Keep the background white
+
+        
+            final_image = (combined_image * 255).astype(np.uint8)
+
+        
+            bitwise_image = cv2.bitwise_not(final_image)
+
+            # Calculate SSIM between the original image and the enhanced image (without applying bitwise NOT)
+            score, _ = ssim(image, final_image, full=True, data_range=255)
+
+            # Save the SSIM score
+            ssim_scores.append((file_name, score))
+
+            # Add SSIM score as text on the combined image
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            score_text = f"SSIM: {score:.4f}"
+
+            color = (0, 0, 255)  # Red color for SSIM score text
+
+            # Convert grayscale images to BGR before adding colored text
+            image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+            bitwise_bgr = cv2.cvtColor(bitwise_image, cv2.COLOR_GRAY2BGR)
+
+            # Concatenate original image and the bitwise-enhanced image side by side
+            combined_image = np.hstack((image_bgr, bitwise_bgr))
+
+    
+            combined_image_with_text = cv2.putText(
+                combined_image, score_text, (10, 30), font, 0.8, color, 2, cv2.LINE_AA
+            )
+
+            # Save the combined image with SSIM score to the output folder
+            output_path = os.path.join(output_folder, f"combined_{file_name}")
+            imsave(output_path, combined_image_with_text)
+
+            print(f"Saved combined image: {output_path} with SSIM: {score:.4f}")
+
+    # Print SSIM scores for all images
+    print("\nSSIM Scores for all images:")
+    for file_name, score in ssim_scores:
+        print(f"{file_name}: SSIM = {score:.4f}")
+
+    print("Processing complete. All combined images saved.")
+
+
+# Define input and output folders
+input_folder = 'C:/Users/2179048/Desktop/Ridge_Comp_Mejering/input'
+output_folder = 'C:/Users/2179048/Desktop/Ridge_Comp_Mejering/final1'
+
+apply_ridge_compensation_filter(input_folder, output_folder)
