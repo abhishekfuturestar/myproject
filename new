@@ -1,27 +1,84 @@
-import os
-from PIL import Image
-import pytesseract
+Fingerprintenhancer:  SSIM Scores for all images:
+PG000701.bmp: SSIM = 0.6074
+PG000714.bmp: SSIM = 0.3960
+PG001090.bmp: SSIM = 0.6222
+PG001427.bmp: SSIM = 0.5174
+PG001728.bmp: SSIM = 0.7410
+PG001891.bmp: SSIM = 0.7511
+PG002400.bmp: SSIM = 0.7388
+PG002802.bmp: SSIM = 0.7081
+PG004147.bmp: SSIM = 0.5301
+PG004318.bmp: SSIM = 0.5237
+PG23111847.bmp: SSIM = 0.5097
+PG23122478.bmp: SSIM = 0.6592
+PG23132203.bmp: SSIM = 0.6423
+PG23133168.bmp: SSIM = 0.6347
+PG23136495.bmp: SSIM = 0.5456
+PG23136876.bmp: SSIM = 0.4546
+PG23136965.bmp: SSIM = 0.3833
+PG23160671.bmp: SSIM = 0.4571
+PG23160742.bmp: SSIM = 0.4418
+PG23161143.bmp: SSIM = 0.5294
+PG23162253.bmp: SSIM = 0.4389
+PG23169570.bmp: SSIM = 0.7034
+PG23170667.bmp: SSIM = 0.5772
+PG23172029.bmp: SSIM = 0.3026
+PG23172602.bmp: SSIM = 0.6180
+PG23177221.bmp: SSIM = 0.5788
+PG23177438.bmp: SSIM = 0.4988
+PG23213038.bmp: SSIM = 0.5677
+PG24000411.bmp: SSIM = 0.3403
+PG24001343.bmp: SSIM = 0.4982
+PG24001864.bmp: SSIM = 0.5079
+PG24002375.bmp: SSIM = 0.5112
+PG24003090.bmp: SSIM = 0.3021
+PG24006257.bmp: SSIM = 0.5374
+PG24006719.bmp: SSIM = 0.3737
+PG24007732.bmp: SSIM = 0.3393
+PG24007788.bmp: SSIM = 0.4835
+PG24007863.bmp: SSIM = 0.4829
+PG24007974.bmp: SSIM = 0.4306
 
-# Specify the folder where your images are located
-folder_path = 'path/to/your/folder'  # Replace with the path to your folder
 
-# Optionally, set the path to the Tesseract executable (for Windows)
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# Iterate through all files in the folder
-for filename in os.listdir(folder_path):
-    # Check if the file is an image (you can filter by extensions like .png, .jpg, etc.)
-    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-        # Construct full image path
-        image_path = os.path.join(folder_path, filename)
+Ridge comepensation filter : SSIM Scores for all images:
 
-        # Open the image
-        img = Image.open(image_path)
-
-        # Extract text from the image
-        text = pytesseract.image_to_string(img)
-
-        # Print the image name and corresponding extracted text
-        print(f"Image: {filename}")
-        print(f"Extracted Text: {text}")
-        print("-" * 50)  # Separator line for readability
+PG000701.bmp: SSIM = 0.5386
+PG000714.bmp: SSIM = 0.2179
+PG001090.bmp: SSIM = 0.8250
+PG001427.bmp: SSIM = 0.5805
+PG001728.bmp: SSIM = 0.7712
+PG001891.bmp: SSIM = 0.7719
+PG002400.bmp: SSIM = 0.7875
+PG002802.bmp: SSIM = 0.7243
+PG004147.bmp: SSIM = 0.3695
+PG004318.bmp: SSIM = 0.4791
+PG23111847.bmp: SSIM = 0.4205
+PG23122478.bmp: SSIM = 0.3922
+PG23132203.bmp: SSIM = 0.4370
+PG23133168.bmp: SSIM = 0.4721
+PG23136495.bmp: SSIM = 0.3839
+PG23136876.bmp: SSIM = 0.3715
+PG23136965.bmp: SSIM = 0.5114
+PG23160671.bmp: SSIM = 0.4041
+PG23160742.bmp: SSIM = 0.3518
+PG23161143.bmp: SSIM = 0.3269
+PG23162253.bmp: SSIM = 0.4451
+PG23169570.bmp: SSIM = 0.3392
+PG23170667.bmp: SSIM = 0.4892
+PG23172029.bmp: SSIM = 0.4385
+PG23172602.bmp: SSIM = 0.4012
+PG23177221.bmp: SSIM = 0.4692
+PG23177438.bmp: SSIM = 0.4591
+PG23213038.bmp: SSIM = 0.4059
+PG24000411.bmp: SSIM = 0.3661
+PG24001343.bmp: SSIM = 0.3961
+PG24001864.bmp: SSIM = 0.3688
+PG24002375.bmp: SSIM = 0.3996
+PG24003090.bmp: SSIM = 0.2795
+PG24006257.bmp: SSIM = 0.3388
+PG24006719.bmp: SSIM = 0.3749
+PG24007732.bmp: SSIM = 0.3813
+PG24007788.bmp: SSIM = 0.4610
+PG24007863.bmp: SSIM = 0.5015
+PG24007974.bmp: SSIM = 0.4486
