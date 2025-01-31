@@ -1,11 +1,27 @@
-"I appreciate the emphasis on developing code that meets requirements. I always ensure to thoroughly understand the specifications before coding, and I prioritize writing clean, efficient, and maintainable code that aligns with project needs. I’m committed to delivering high-quality solutions that fulfill the intended purpose.
+import os
+from PIL import Image
+import pytesseract
 
+# Specify the folder where your images are located
+folder_path = 'path/to/your/folder'  # Replace with the path to your folder
 
+# Optionally, set the path to the Tesseract executable (for Windows)
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-Thank you for highlighting the importance of adherence to internal TCS/client processes. I fully understand the significance of following established processes and systems to ensure smooth delivery. I am committed to maintaining a zero-defect standard by paying attention to detail, ensuring quality, and aligning with both internal and client-specific requirements throughout the project lifecycle."
+# Iterate through all files in the folder
+for filename in os.listdir(folder_path):
+    # Check if the file is an image (you can filter by extensions like .png, .jpg, etc.)
+    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+        # Construct full image path
+        image_path = os.path.join(folder_path, filename)
 
+        # Open the image
+        img = Image.open(image_path)
 
-Thank you for emphasizing the importance of addressing post-implementation defects. I prioritize resolving any defects raised by the customer within the prescribed SLA by carefully analyzing the issue, ensuring a timely and effective solution, and maintaining clear communication with all stakeholders to ensure customer satisfaction.
+        # Extract text from the image
+        text = pytesseract.image_to_string(img)
 
-
-Thank you for highlighting personal development. I believe in continually enhancing my skills and knowledge to stay relevant and effective in my role. Whether through formal training, self-study, or learning from practical experience, I actively seek opportunities for growth. I also set personal development goals regularly to ensure I am improving both professionally and personally
+        # Print the image name and corresponding extracted text
+        print(f"Image: {filename}")
+        print(f"Extracted Text: {text}")
+        print("-" * 50)  # Separator line for readability
