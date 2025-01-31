@@ -39,7 +39,3 @@ PG24007732.bmp	0.3393	0.3813	-0.0420
 PG24007788.bmp	0.4835	0.4610	0.0225
 PG24007863.bmp	0.4829	0.5015	-0.0186
 PG24007974.bmp	0.4306	0.4486	-0.0180
-Explanation:
-Fingerprint Enhancer SSIM: This column represents the SSIM score for each image using the Fingerprint Enhancer method.
-
-Ridge Compensation Filter SSIM: This column represents the SSIM score for each image using the Ridge Compensation Filter method.
