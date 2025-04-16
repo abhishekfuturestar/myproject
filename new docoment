@@ -2,8 +2,8 @@ import pandas as pd
 import os
 
 # ✅ Step 1: Set your parent folder path here
-parent_dir = r"C:\Users\2179048\Downloads\Y21, Y22, Y23 - Sem1 to Sem6  2024 (1)"
-
+parent_dir = r"C:\Users\2179048\Downloads\Y21, Y22, Y23 - Sem1 to Sem6  2024 (1)\Y21, Y22, Y23 - Sem1 to Sem6  2024\Y21-SEM1 TO SEM6-2021 TO 2024"
+#C:\Users\2179048\Downloads\Y21, Y22, Y23 - Sem1 to Sem6  2024 (1)\Y21, Y22, Y23 - Sem1 to Sem6  2024\Y21-SEM1 TO SEM6-2021 TO 2024
 # ✅ Step 2: Prepare list to collect data
 all_data = []
 
