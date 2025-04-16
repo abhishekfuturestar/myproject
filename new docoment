@@ -1,1 +1,19 @@
-parent_dir = r"C:\Users\YourName\Documents\student_csvs"
+
+
+import pandas as pd
+import os
+parent_dir  = r"C:\Users\2179048\Downloads\Y21, Y22, Y23 - Sem1 to Sem6  2024 (1)"  # Replace with actual path
+all_data = []
+
+for folder in os.listdir(parent_dir):
+    folder_path = os.path.join(parent_dir, folder)
+    if os.path.isdir(folder_path):
+        for file in os.listdir(folder_path):
+            if file.endswith(".csv"):
+                file_path = os.path.join(folder_path, file)
+                df = pd.read_csv(file_path)
+                df['SourceFolder'] = folder  # Optional: add folder info
+                all_data.append(df)
+final_df = pd.concat(all_data, ignore_index=True)
+final_df.head()
+final_df.to_csv("merged_data.csv", index=False)
