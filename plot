@@ -1,34 +1,26 @@
-ORG_CODE                      ORG_NAME  OLD_ORG_NAME  \
-0       NaN  ACHARYA NAGARJUNA UNIVERISTY           NaN   
-1       NaN  ACHARYA NAGARJUNA UNIVERISTY           NaN   
-2       NaN  ACHARYA NAGARJUNA UNIVERISTY           NaN   
-3       NaN  ACHARYA NAGARJUNA UNIVERISTY           NaN   
-4       NaN  ACHARYA NAGARJUNA UNIVERISTY           NaN   
+CREATE TABLE community_data (
+    ORG_CODE VARCHAR(20), 
+    ORG_NAME VARCHAR(150),
+    OLD_ORG_NAME VARCHAR(150),
+    ORG_ADDRESS VARCHAR(200),
+    ORG_CITY VARCHAR(100),
+    ORG_STATE VARCHAR(100),
+    ORG_PIN VARCHAR(10),
 
-              ORG_ADDRESS ORG_CITY        ORG_STATE   ORG_PIN  \
-0  NAGARJUNA NAGAR GUNTUR   GUNTUR  ANDHARA PRADESH  522510.0   
-1  NAGARJUNA NAGAR GUNTUR   GUNTUR  ANDHARA PRADESH  522510.0   
-2  NAGARJUNA NAGAR GUNTUR   GUNTUR  ANDHARA PRADESH  522510.0   
-3  NAGARJUNA NAGAR GUNTUR   GUNTUR  ANDHARA PRADESH  522510.0   
-4  NAGARJUNA NAGAR GUNTUR   GUNTUR  ANDHARA PRADESH  522510.0   
+    ACADEMIC_COURSE_ID VARCHAR(20),
+    COURSE_NAME VARCHAR(100),
+    STREAM VARCHAR(100),
 
-  ACADEMIC_COURSE_ID COURSE_NAME  STREAM  ...  TOT_CREDIT_POINTS_MAX  \
-0                 BA          BA     NaN  ...                    NaN   
-1                 BA          BA     NaN  ...                    NaN   
-2                 BA          BA     NaN  ...                    NaN   
-3                 BA          BA     NaN  ...                    NaN   
-4                 BA          BA     NaN  ...                    NaN   
+    TOT_CREDIT_POINTS_MAX DECIMAL(5,2),
+    AADHAAR_NAME VARCHAR(150),
+    MEDIUM VARCHAR(50),
+    GPA DECIMAL(4,2),
 
-   AADHAAR_NAME   MEDIUM GPA  ADMISSION_YEAR TGPA YGPA DGPA NCRF_LEVEL  \
-0           NaN  English NaN          2022.0  NaN  NaN  NaN        NaN   
-1           NaN  English NaN          2022.0  NaN  NaN  NaN        NaN   
-2           NaN  English NaN          2022.0  NaN  NaN  NaN        NaN   
-3           NaN  English NaN          2022.0  NaN  NaN  NaN        NaN   
-4           NaN  English NaN          2022.0  NaN  NaN  NaN        NaN   
+    ADMISSION_YEAR INT,
+    TGPA DECIMAL(4,2),
+    YGPA DECIMAL(4,2),
+    DGPA DECIMAL(4,2),
+    NCRF_LEVEL VARCHAR(20),
 
-                    SourceFolder  
-0  Y21-SEM1 TO SEM6-2021 TO 2024  
-1  Y22-SEM1 TO SEM4-2023 TO 2024  
-2  Y22-SEM1 TO SEM4-2023 TO 2024  
-3  Y22-SEM1 TO SEM4-2023 TO 2024  
-4  Y22-SEM1 TO SEM4-2023 TO 2024  
+    SourceFolder VARCHAR(100)
+);
