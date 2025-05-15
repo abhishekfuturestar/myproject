@@ -1,13 +1,1 @@
-CREATE TABLE IF NOT EXISTS kvr_students_iyear_2024 (
-    serial_no INT,
-    registration_number STRING,
-    candidate_name STRING,
-    mobile_no STRING,
-    course_category STRING,
-    subject_major STRING,
-    subject_minor STRING,
-    category STRING
-)
-ROW FORMAT DELIMITED
-FIELDS TERMINATED BY '\t'
-STORED AS TEXTFILE;
+
