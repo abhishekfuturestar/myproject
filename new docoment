@@ -1,88 +1,107 @@
+1. Importing Required Modules
+The script begins by importing necessary modules:
 
+python
+Copy
+Edit
 import argparse
 import sys
 from pathlib import Path
-
 from src.entry import entry_point
 from src.logger import logger
+argparse: A standard library module for parsing command-line arguments.
 
+sys: Provides access to system-specific parameters and functions (like exiting and handling exceptions).
 
-def parse_args():
-    # construct the argument parse and parse the arguments
-    argparser = argparse.ArgumentParser()
+Path from pathlib: Used for handling and manipulating filesystem paths in an object-oriented way.
 
-    argparser.add_argument(
-        "-i",
-        "--inputDir",
-        default=["inputs"],
-        nargs="*",
-        required=False,
-        type=str,
-        dest="input_paths",
-        help="Specify an input directory.",
-    )
+entry_point and logger are imported from the src package, indicating this is part of a larger project where entry_point likely processes data and logger is used for custom logging.
 
-    argparser.add_argument(
-        "-d",
-        "--debug",
-        required=False,
-        dest="debug",
-        action="store_false",
-        help="Enables debugging mode for showing detailed errors",
-    )
+2. Argument Parsing Function: parse_args()
+The parse_args() function defines and processes command-line arguments using the argparse module. This lets users customize how the script runs without modifying the code.
 
-    argparser.add_argument(
-        "-o",
-        "--outputDir",
-        default="outputs",
-        required=False,
-        dest="output_dir",
-        help="Specify an output directory.",
-    )
+python
+Copy
+Edit
+argparser = argparse.ArgumentParser()
+A parser object is created to handle argument definitions.
 
-    argparser.add_argument(
-        "-a",
-        "--autoAlign",
-        required=False,
-        dest="autoAlign",
-        action="store_true",
-        help="(experimental) Enables automatic template alignment - \
-        use if the scans show slight misalignments.",
-    )
+The defined arguments:
+--inputDir / -i:
 
-    argparser.add_argument(
-        "-l",
-        "--setLayout",
-        required=False,
-        dest="setLayout",
-        action="store_true",
-        help="Set up OMR template layout - modify your json file and \
-        run again until the template is set.",
-    )
+Accepts one or more input directory paths (as strings).
 
-    (
-        args,
-        unknown,
-    ) = argparser.parse_known_args()
+Defaults to a directory named "inputs" if none is provided.
 
-    args = vars(args)
+Stored in input_paths.
 
-    if len(unknown) > 0:
-        logger.warning(f"\nError: Unknown arguments: {unknown}", unknown)
-        argparser.print_help()
-        exit(11)
-    return args
+--debug / -d:
 
+A flag to enable or disable debug mode.
 
-def entry_point_for_args(args):
-    if args["debug"] is True:
-        # Disable tracebacks
-        sys.tracebacklimit = 0
-    for root in args["input_paths"]:
-        entry_point(Path(root), args,)
+When used, it sets debug to False due to action="store_false". So, by default, debug is True.
 
+--outputDir / -o:
 
+Specifies the directory to write outputs to.
+
+Defaults to "outputs" if not specified.
+
+--autoAlign / -a:
+
+Enables automatic alignment for scans, useful when dealing with slightly misaligned inputs.
+
+It’s an experimental feature triggered with store_true.
+
+--setLayout / -l:
+
+Enables a mode for setting up the layout of an OMR (Optical Mark Recognition) template.
+
+Also a flag that turns True when used.
+
+python
+Copy
+Edit
+args, unknown = argparser.parse_known_args()
+parse_known_args() is used to separate known and unknown arguments. Unknown arguments are collected in unknown.
+
+python
+Copy
+Edit
+if len(unknown) > 0:
+    logger.warning(...)
+    argparser.print_help()
+    exit(11)
+If unknown arguments are found, a warning is logged, help is displayed, and the script exits with error code 11.
+
+Finally, args is converted from a Namespace object to a dictionary for easier access.
+
+3. Processing Input with entry_point_for_args()
+The function entry_point_for_args(args) takes the parsed arguments and executes the core logic.
+
+python
+Copy
+Edit
+if args["debug"] is True:
+    sys.tracebacklimit = 0
+If debug mode is enabled (debug=True), it disables Python traceback messages by setting tracebacklimit = 0, so only high-level errors are shown, not full tracebacks.
+
+python
+Copy
+Edit
+for root in args["input_paths"]:
+    entry_point(Path(root), args)
+It loops through each specified input directory path, wraps it in a Path object, and passes it along with args to the entry_point() function for further processing.
+
+4. Main Execution Block
+python
+Copy
+Edit
 if __name__ == "__main__":
     args = parse_args()
     print(args)
     entry_point_for_args(args)
+This block ensures the script only runs when executed directly (not when imported as a module). It parses the command-line arguments, prints them for inspection, and then calls entry_point_for_args() to start the main task.
+
+Summary
+This script acts as a CLI (Command-Line Interface) wrapper for a larger application, handling input/output paths, debug settings, and optional processing modes like auto-alignment and layout setup. It validates arguments, gracefully handles errors, and passes inputs to the main entry point. It's designed with modularity in mind, relying on separate components (src.entry, src.logger) for actual logic and logging.
