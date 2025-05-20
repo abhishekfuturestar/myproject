@@ -1,0 +1,107 @@
+📁 1. config.json
+This file controls general settings related to image processing and display behavior.
+
+Key Sections:
+dimensions: Sets display and processing image size.
+
+json
+Copy
+Edit
+"display_height": 800,
+"display_width": 600,
+"processing_height": 800,
+"processing_width": 600
+These standardize the image dimensions your system uses for consistency.
+
+outputs:
+
+show_image_level: Controls verbosity of image display (e.g., 0 = none, 1 = low, 2 = full).
+
+save_image_level: Same idea but for saving processed images.
+
+save_detections: Whether to save the raw detection results (like bubble positions).
+
+alignment_params:
+
+auto_align: Whether to perform automatic alignment based on a reference image (useful for correcting skewed scans).
+
+📁 2. evaluation.json
+This defines how the OMR results are scored and visualized.
+
+Key Sections:
+source_type: "csv" — Your answer key source is a CSV file.
+
+options:
+
+Path to the CSV (answer_key.csv) and whether to explain scoring per question.
+
+marking_schemes:
+
+json
+Copy
+Edit
+"correct": "1",
+"incorrect": "0",
+"unmarked": "0"
+Defines marks awarded for each scenario.
+
+outputs_configuration:
+Enables drawing:
+
+Score (e.g., total marks)
+
+Answers Summary (e.g., correct vs incorrect count)
+
+Verdicts on each question (e.g., colored circles or symbols)
+
+Color scheme for correct/incorrect/unmarked responses.
+
+📁 3. template.json
+Defines the layout of the OMR sheet — where the bubbles are located and how to interpret them.
+
+Key Sections:
+pageDimensions: The size of the OMR sheet in pixels.
+
+bubbleDimensions: Size of each bubble (width x height in pixels).
+
+fieldBlocks: The most important part. Each block defines:
+
+fieldType: E.g., QTYPE_MCQ5 = multiple choice with 5 options (A–E).
+
+origin: Top-left corner of the block on the sheet.
+
+fieldLabels: Questions covered in this block.
+
+bubblesGap: Vertical spacing between bubbles.
+
+labelsGap: Vertical spacing between questions.
+
+✅ Example: MCQBlock1 covers Telugu_q1..10 starting at position [85, 322].
+
+preProcessors:
+
+Levels: Adjusts image contrast or thresholds.
+
+FeatureBasedAlignment: Aligns input sheet with a reference (reference.jpeg) using feature matching.
+
+📁 4. answer_key.csv (a.k.a. answer.json in your message)
+Contains the correct answers per question. Used to compare with marked responses and assign scores.
+
+📌 Format:
+
+css
+Copy
+Edit
+Telugu_q1,A
+Telugu_q2,B
+...
+Each entry maps a question label (from template.json) to its correct answer. This file powers the evaluation defined in evaluation.json.
+
+✅ Summary: How They Work Together
+File	Role
+config.json	Image sizes, display/saving, alignment settings
+template.json	Bubble positions, question layout
+evaluation.json	Scoring rules, output visualization
+answer_key.csv	Correct answers for each question
+
+Let me know if you want help visualizing the template layout, modifying scoring, or testing with a sample scanned OMR image!
