@@ -1,4 +1,4 @@
-{
+template.json file:{
   "pageDimensions": [ 600,700],
   "bubbleDimensions": [ 20, 20 ],
   "customLabels": {},
