@@ -33,7 +33,10 @@ template.json file:{
       }
     }
   ]
-}          and config.json file: {
+}        
+
+and config.json file: 
+{
   "dimensions": {
     "display_height": 700,
     "display_width": 600,
