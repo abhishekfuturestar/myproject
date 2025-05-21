@@ -1,18 +1,60 @@
-Exception: Provided Template JSON is Invalid: 'Omr_Bubble\Image0\template.json'
-
-C:\Users\2179048\Desktop\Project\OMRChecker_demo\OMRChecker_demo>python main.py -i vmt_omr --setLayout
-[00:12:09] INFO     Loading OMRChecker modules...                                                          __init__.py:4
-[00:12:14] INFO     Loading processors from "src.processors"...                                            manager.py:49
-           INFO     Loaded processors: ['CropOnMarkers', 'CropPage', 'FeatureBasedAlignment',              manager.py:72
-                    'GaussianBlur', 'Levels', 'MedianBlur']
-{'input_paths': ['vmt_omr'], 'debug': True, 'output_dir': 'outputs', 'autoAlign': False, 'setLayout': True}
-           INFO     Loading config.json: vmt_omr\Image0\config.json                                    validations.py:76
-           INFO     Loading template.json: vmt_omr\Image0\template.json                                validations.py:41
-      ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-      ┃ Key         ┃ Error                                                                                      ┃
-      ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-      │ fieldBlocks │ 'QTYPE_DIGITS' is not one of ['QTYPE_INT', 'QTYPE_INT_FROM_1', 'QTYPE_MCQ4', 'QTYPE_MCQ5'] │
-      ├─────────────┼────────────────────────────────────────────────────────────────────────────────────────────┤
-      │ fieldBlocks │ 'QTYPE_DIGITS' is not one of ['QTYPE_INT', 'QTYPE_INT_FROM_1', 'QTYPE_MCQ4', 'QTYPE_MCQ5'] │
-      └─────────────┴────────────────────────────────────────────────────────────────────────────────────────────┘
-Exception: Provided Template JSON is Invalid: 'vmt_omr\Image0\template.json'
+{
+  "pageDimensions": [600, 700],
+  "bubbleDimensions": [20, 20],
+  "customLabels": {},
+  "fieldBlocks": {
+    "APAAR_ID": {
+      "fieldType": "QTYPE_INT",
+      "origin": [120, 120],
+      "fieldLabels": [
+        "digit1", "digit2", "digit3", "digit4", "digit5",
+        "digit6", "digit7", "digit8", "digit9", "digit10"
+      ],
+      "bubblesGap": 20,
+      "labelsGap": 20
+    },
+    "EXAM_CODE": {
+      "fieldType": "QTYPE_INT",
+      "origin": [480, 120],
+      "fieldLabels": ["code_digit"],
+      "bubblesGap": 20,
+      "labelsGap": 0
+    },
+    "MCQBlock1": {
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [96, 304],
+      "fieldLabels": ["q1", "q2", "q3", "q4", "q5"],
+      "bubblesGap": 23,
+      "labelsGap": 15
+    },
+    "MCQBlock2": {
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [274, 304],
+      "fieldLabels": ["q6", "q7", "q8", "q9", "q10"],
+      "bubblesGap": 23,
+      "labelsGap": 15
+    },
+    "MCQBlock3": {
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [423, 304],
+      "fieldLabels": ["q11", "q12", "q13", "q14", "q15"],
+      "bubblesGap": 23,
+      "labelsGap": 15
+    },
+    "MCQBlock4": {
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [120, 520],
+      "fieldLabels": ["q16", "q17", "q18", "q19", "q20", "q21"],
+      "bubblesGap": 23,
+      "labelsGap": 15
+    }
+  },
+  "preProcessors": [
+    {
+      "name": "CropPage",
+      "options": {
+        "morphKernel": [10, 10]
+      }
+    }
+  ]
+}
