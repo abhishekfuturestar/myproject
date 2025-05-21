@@ -1,187 +1,46 @@
-config.json file:
 {
-  "dimensions": {
-    "display_height": 800,
-    "display_width": 600,
-    "processing_height": 800,
-    "processing_width": 600
-  },
-  "outputs": {
-    "show_image_level": 2,
-    "save_image_level": 2,
-    "save_detections": false
-  },
-  "alignment_params": {
-    "auto_align": true
-  }
-}
-evaluation.json file : {
-  "source_type": "csv",
-  "options": {
-    "answer_key_csv_path": "answer_key.csv",
-    "should_explain_scoring": true
-  },
-  "marking_schemes": {
-    "DEFAULT": {
-      "correct": "1",
-      "incorrect": "0",
-      "unmarked": "0"
-    }
-  },
-  "outputs_configuration": {
-    "draw_score": {
-      "enabled": true,
-      "position": [400, 200],
-      "size": 1.5
-    },
-    "draw_answers_summary": {
-      "enabled": true,
-      "position": [500, 200],
-      "size": 1.0
-    },
-    "draw_question_verdicts": {
-      "enabled": true,
-      "verdict_colors": {
-        "correct": "green",
-        "unmarked": "#000000",
-        "incorrect": "red"
-      }
-    },
-    "verdict_symbol_colors": {
-        "positive": "#000000",
-        "neutral": "#000000",
-        "negative": "#000000",
-        "bonus": "#000000"
-      }
-  }
-}
-template.json file: {
-  "pageDimensions": [ 700, 800 ],
-  "bubbleDimensions": [ 14, 11 ],
+  "pageDimensions": [ 600,700],
+  "bubbleDimensions": [ 20, 20 ],
   "customLabels": {},
   "fieldBlocks": {
     "MCQBlock1": {
-      "fieldType": "QTYPE_MCQ5",
-      "origin": [ 85, 322 ],
-      "fieldLabels": ["Telugu_q1..10"],
-      "bubblesGap": 29,
-      "labelsGap": 12
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [ 96,304 ],
+      "fieldLabels": ["q1", "q2", "q3","q4","q5"],
+      "bubblesGap": 23,
+      "labelsGap": 15
     },
-
     "MCQBlock2": {
-      "fieldType": "QTYPE_MCQ5",
-      "origin": [ 273, 322 ],
-      "fieldLabels": ["Hindi_q1..10"],
-      "bubblesGap": 29,
-      "labelsGap": 12
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [ 274, 304 ],
+      "fieldLabels": ["q6", "q7", "q8", "q9","q10"],
+      "bubblesGap": 23,
+      "labelsGap": 15
     },
-
     "MCQBlock3": {
-      "fieldType": "QTYPE_MCQ5",
-      "origin": [ 85, 460 ],
-      "fieldLabels": ["English_q1..10"],
-      "bubblesGap": 29,
-      "labelsGap": 12
-    },
-
-    "MCQBlock4": {
-      "fieldType": "QTYPE_MCQ5",
-      "origin": [ 273, 460 ],
-      "fieldLabels": ["Mathematics_q1..10"],
-      "bubblesGap": 29,
-      "labelsGap": 12
-    },
-
-    "MCQBlock5": {
-      "fieldType": "QTYPE_MCQ5",
-      "origin": [ 85, 599 ],
-      "fieldLabels": ["General_science_q1..10"],
-      "bubblesGap": 29,
-      "labelsGap": 12
-    },
-
-    "MCQBlock6": {
-      "fieldType": "QTYPE_MCQ5",
-      "origin": [ 273, 599 ],
-      "fieldLabels": ["Social_studies_q1..10"],
-      "bubblesGap": 29,
-      "labelsGap": 12
-    }
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [ 423, 304 ],
+      "fieldLabels": ["q11", "q12", "q13", "q14","q15"],
+      "bubblesGap": 23,
+      "labelsGap": 15
+    }    
   },
   "preProcessors": [
     {
-      "name": "Levels",
+      "name": "CropPage",
       "options": {
-        "low": 0.8
-      }
-    },
-    {
-      "name": "FeatureBasedAlignment",
-      "options": {
-        "reference": "reference.jpeg",
-        "maxFeatures": 1500,
-        "2d": true
+        "morphKernel": [ 10, 10 ]
       }
     }
   ]
-} and answer.sjon file: Telugu_q1,A
-Telugu_q2,B
-Telugu_q3,C
-Telugu_q4,D
-Telugu_q5,E
-Telugu_q6,A
-Telugu_q7,B
-Telugu_q8,C
-Telugu_q9,D
-Telugu_q10,E
-Hindi_q1,A
-Hindi_q2,B
-Hindi_q3,C
-Hindi_q4,D
-Hindi_q5,E
-Hindi_q6,A
-Hindi_q7,B
-Hindi_q8,C
-Hindi_q9,D
-Hindi_q10,E
-English_q1,A
-English_q2,B
-English_q3,A
-English_q4,C
-English_q5,C
-English_q6,D
-English_q7,B
-English_q8,C
-English_q9,A
-English_q10,E
-Mathematics_q1,E
-Mathematics_q2,A
-Mathematics_q3,D
-Mathematics_q4,C
-Mathematics_q5,A
-Mathematics_q6,B
-Mathematics_q7,C
-Mathematics_q8,A
-Mathematics_q9,A
-Mathematics_q10,A
-General_science_q1,A
-General_science_q2,B
-General_science_q3,C
-General_science_q4,D
-General_science_q5,E
-General_science_q6,A
-General_science_q7,B
-General_science_q8,C
-General_science_q9,D
-General_science_q10,E
-Social_studies_q1,A
-Social_studies_q2,B
-Social_studies_q3,C
-Social_studies_q4,D
-Social_studies_q5,E
-Social_studies_q6,A
-Social_studies_q7,B
-Social_studies_q8,C
-Social_studies_q9,D
-Social_studies_q10,E
-
+}          and config.json file: {
+  "dimensions": {
+    "display_height": 700,
+    "display_width": 600,
+    "processing_height": 700,
+    "processing_width": 600
+  },
+  "outputs": {
+    "show_image_level": 2
+  }
+}
