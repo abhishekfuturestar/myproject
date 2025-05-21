@@ -1,11 +1,11 @@
-
-C:\Users\2179048\Desktop\Project\OMRChecker_demo\OMRChecker_demo>python main.py -i Omr_Bubble --setLayout
-[23:54:38] INFO     Loading OMRChecker modules...                                                                                      __init__.py:4
-[23:54:43] INFO     Loading processors from "src.processors"...                                                                        manager.py:49
-           INFO     Loaded processors: ['CropOnMarkers', 'CropPage', 'FeatureBasedAlignment', 'GaussianBlur', 'Levels', 'MedianBlur']  manager.py:72
-{'input_paths': ['Omr_Bubble'], 'debug': True, 'output_dir': 'outputs', 'autoAlign': False, 'setLayout': True}
-           INFO     Loading config.json: Omr_Bubble\Image0\config.json                                                             validations.py:76
-                                    ┏━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-                                    ┃ Key   ┃ Error                                                           ┃
-                                    ┡━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-                                    │ $root │ Additional properties are not allowed ('fields' was unexpected)
+{
+  "dimensions": {
+    "display_height": 700,
+    "display_width": 600,
+    "processing_height": 700,
+    "processing_width": 600
+  },
+  "outputs": {
+    "show_image_level": 2
+  }
+}
