@@ -1,42 +1,11 @@
-{
-  "dimensions": {
-    "display_height": 700,
-    "display_width": 600,
-    "processing_height": 700,
-    "processing_width": 600
-  },
-  "outputs": {
-    "show_image_level": 2
-  },
-  "fields": {
-    "APAAR_ID": {
-      "type": "digits",
-      "length": 10
-    },
-    "EXAM_CODE": {
-      "type": "digits",
-      "length": 1
-    },
-    "q1": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q2": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q3": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q4": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q5": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q6": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q7": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q8": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q9": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q10": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q11": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q12": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q13": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q14": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q15": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q16": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q17": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q18": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q19": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q20": { "type": "mcq", "options": ["A", "B", "C", "D"] },
-    "q21": { "type": "mcq", "options": ["A", "B", "C", "D"] }
-  }
-}
+C
+C:\Users\2179048\Desktop\Project\OMRChecker_demo\OMRChecker_demo>python main.py -i vmt_omrtest --setLayout
+[13:03:39] INFO     Loading OMRChecker modules...                                                                                      __init__.py:4
+[13:03:42] INFO     Loading processors from "src.processors"...                                                                        manager.py:49
+           INFO     Loaded processors: ['CropOnMarkers', 'CropPage', 'FeatureBasedAlignment', 'GaussianBlur', 'Levels', 'MedianBlur']  manager.py:72
+{'input_paths': ['vmt_omrtest'], 'debug': True, 'output_dir': 'outputs', 'autoAlign': False, 'setLayout': True}
+           INFO     Loading config.json: vmt_omrtest\Image0\config.json                                                            validations.py:76
+                                    ┏━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                                    ┃ Key   ┃ Error                                                           ┃
+                                    ┡━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+                                    │ $root │ Additional properties are not allowed ('fields' was unexpected) │
