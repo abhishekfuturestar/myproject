@@ -1,84 +1,42 @@
 {
-  "fieldBlocks": [
-    {
-      "id": "APAAR_ID",
-      "type": "QTYPE_INT",
-      "position": [60, 85],
-      "size": [240, 200],
-      "rows": 10,
-      "cols": 10,
-      "valueMap": {
-        "0": 0, "1": 1, "2": 2, "3": 3, "4": 4,
-        "5": 5, "6": 6, "7": 7, "8": 8, "9": 9
-      }
+  "dimensions": {
+    "display_height": 700,
+    "display_width": 600,
+    "processing_height": 700,
+    "processing_width": 600
+  },
+  "outputs": {
+    "show_image_level": 2
+  },
+  "fields": {
+    "APAAR_ID": {
+      "type": "digits",
+      "length": 10
     },
-    {
-      "id": "EXAM_CODE",
-      "type": "QTYPE_INT_FROM_1",
-      "position": [345, 85],
-      "size": [40, 200],
-      "rows": 10,
-      "cols": 1,
-      "valueMap": {
-        "1": 1, "2": 2, "3": 3, "4": 4, "5": 5,
-        "6": 6, "7": 7, "8": 8, "9": 9, "0": 0
-      }
+    "EXAM_CODE": {
+      "type": "digits",
+      "length": 1
     },
-    {
-      "id": "q1",
-      "type": "QTYPE_MCQ4",
-      "position": [60, 310],
-      "size": [80, 120],
-      "rows": 4,
-      "cols": 1,
-      "valueMap": {
-        "A": 0,
-        "B": 1,
-        "C": 2,
-        "D": 3
-      }
-    },
-    {
-      "id": "q2",
-      "type": "QTYPE_MCQ4",
-      "position": [160, 310],
-      "size": [80, 120],
-      "rows": 4,
-      "cols": 1,
-      "valueMap": {
-        "A": 0,
-        "B": 1,
-        "C": 2,
-        "D": 3
-      }
-    },
-    {
-      "id": "q3",
-      "type": "QTYPE_MCQ4",
-      "position": [260, 310],
-      "size": [80, 120],
-      "rows": 4,
-      "cols": 1,
-      "valueMap": {
-        "A": 0,
-        "B": 1,
-        "C": 2,
-        "D": 3
-      }
-    },
-    {
-      "id": "q4",
-      "type": "QTYPE_MCQ4",
-      "position": [360, 310],
-      "size": [80, 120],
-      "rows": 4,
-      "cols": 1,
-      "valueMap": {
-        "A": 0,
-        "B": 1,
-        "C": 2,
-        "D": 3
-      }
-    }
-  ]
+    "q1": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q2": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q3": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q4": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q5": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q6": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q7": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q8": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q9": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q10": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q11": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q12": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q13": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q14": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q15": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q16": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q17": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q18": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q19": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q20": { "type": "mcq", "options": ["A", "B", "C", "D"] },
+    "q21": { "type": "mcq", "options": ["A", "B", "C", "D"] }
+  }
 }
